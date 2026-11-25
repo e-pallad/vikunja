@@ -197,6 +197,10 @@ async function cancel(element: HTMLInputElement) {
 
 .title {
 	margin-block-end: 0;
+	font-size: 1.75rem;
+	font-weight: 700;
+	letter-spacing: -.02em;
+	color: var(--text-strong);
 }
 
 .title.input {
@@ -210,7 +214,8 @@ async function cancel(element: HTMLInputElement) {
 }
 
 .title.task-id {
-	color: var(--grey-400);
+	color: var(--text-muted);
+	font-weight: 500;
 	white-space: nowrap;
 }
 

@@ -100,10 +100,14 @@
 						>	
 							<time
 								:datetime="formatISO(task.due_date)"
-								class="is-italic"
+								class="due-chip"
 								:aria-expanded="isOpen ? 'true' : 'false'"
 							>
-								– {{ $t('task.detail.due', {at: dueDateFormatted}) }}
+								<Icon
+									:icon="['far', 'calendar-alt']"
+									class="due-chip__icon"
+								/>
+								{{ $t('task.detail.due', {at: dueDateFormatted}) }}
 							</time>
 						</BaseButton>
 					</template>
@@ -405,15 +409,21 @@ defineExpose({
 .task {
 	display: flex;
 	flex-wrap: wrap;
-	padding: .4rem;
+	padding: .625rem .75rem;
 	transition: background-color $transition;
 	align-items: center;
 	cursor: pointer;
 	border-radius: $radius;
 	border: 2px solid transparent;
+	font-size: .9375rem;
+	line-height: 1.4;
 
 	&:hover {
-		background-color: var(--grey-100);
+		background-color: var(--kanban-column-background);
+	}
+
+	a.task-link {
+		font-weight: 500;
 	}
 
 	&:has(*:focus-visible), &:focus {
@@ -451,7 +461,8 @@ defineExpose({
 
 	.dueDate {
 		display: inline-block;
-		margin-inline-start: 5px;
+		margin-inline-start: .5rem;
+		vertical-align: middle;
 
 		&:focus-visible {
 			box-shadow: none;
@@ -463,14 +474,40 @@ defineExpose({
 		}
 	}
 
-	&[data-is-overdue] .dueDate {
+	.due-chip {
+		display: inline-flex;
+		align-items: center;
+		gap: .25rem;
+		padding: .0625rem .4375rem;
+		border-radius: 5px;
+		background: var(--grey-100);
+		color: var(--grey-600);
+		font-size: .75rem;
+		font-weight: 500;
+		font-style: normal;
+	}
+
+	.due-chip__icon {
+		inline-size: .6875rem;
+	}
+
+	&[data-is-overdue] .due-chip {
 		color: var(--danger-text);
+		background: hsla(var(--danger-h), var(--danger-s), 60%, .12);
+	}
+
+	.tasktext :deep(.labels .tag) {
+		font-size: .6875rem;
+		font-weight: 600;
+		block-size: auto;
+		padding: .125rem .4375rem;
+		border-radius: 5px;
 	}
 
 	.task-project {
 		inline-size: auto;
-		color: var(--grey-400);
-		font-size: .9rem;
+		color: var(--text-muted);
+		font-size: .8125rem;
 		white-space: nowrap;
 	}
 
@@ -567,7 +604,7 @@ defineExpose({
 
 	.tasktext.done {
 		text-decoration: line-through;
-		color: var(--grey-500);
+		color: var(--text-muted);
 	}
 
 	span.parent-tasks {

@@ -322,6 +322,10 @@ watchEffect(() => setTitle(pageTitle.value))
 .tasks {
 	list-style: none;
 	margin: 0;
+
+	> li + li {
+		border-block-start: 1px solid var(--surface-border);
+	}
 }
 
 .show-tasks-options {

@@ -868,7 +868,7 @@ function unCollapseBucket(bucket: BucketResponse) {
 
 <style lang="scss">
 $ease-out: all .3s cubic-bezier(0.23, 1, 0.32, 1);
-$bucket-width: 272px;
+$bucket-width: 288px;
 $bucket-header-height: 52px;
 $bucket-right-margin: .75rem;
 $crazy-height-calculation: '100vh - 4.5rem - 1.5rem - 1rem - 1.5rem - 11px';

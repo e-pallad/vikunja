@@ -1,6 +1,9 @@
 <template>
 	<div class="content has-text-centered">
-		<h1 v-if="salutation">
+		<h1
+			v-if="salutation"
+			class="home-salutation is-max-width-desktop"
+		>
 			{{ salutation }}
 		</h1>
 
@@ -116,5 +119,10 @@ function handleClearLabelFilter() {
 <style scoped lang="scss">
 .show-tasks {
 	margin-block-start: 2rem;
+}
+
+.home-salutation {
+	text-align: start;
+	margin-block-end: 1.25rem;
 }
 </style>

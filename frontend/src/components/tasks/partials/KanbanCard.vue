@@ -351,11 +351,12 @@ $task-background: var(--kanban-card-background);
 	background: $task-background;
 	box-shadow: var(--shadow-xs);
 	overflow: hidden;
-	transition: box-shadow $transition, border-color $transition;
+	transition: box-shadow $transition, border-color $transition, transform $transition;
 
 	&:hover {
 		border-color: var(--grey-300);
-		box-shadow: var(--shadow-sm);
+		box-shadow: var(--shadow-md);
+		transform: translateY(-1px);
 	}
 
 	&.loader-container.is-loading::after {
@@ -368,8 +369,9 @@ $task-background: var(--kanban-card-background);
 
 	h3 {
 		font-family: $family-sans-serif;
-		font-size: .875rem;
-		font-weight: 550;
+		font-size: .9375rem;
+		font-weight: 600;
+		letter-spacing: -.005em;
 		line-height: 1.35;
 		word-break: break-word;
 		margin: 0;
@@ -512,8 +514,8 @@ $task-background: var(--kanban-card-background);
 .kanban-card__body {
 	display: flex;
 	flex-direction: column;
-	gap: .5rem;
-	padding: .625rem .75rem;
+	gap: .625rem;
+	padding: .75rem .875rem;
 }
 
 .kanban-card__labels :deep(.tag) {

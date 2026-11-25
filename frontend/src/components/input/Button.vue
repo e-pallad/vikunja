@@ -89,15 +89,14 @@ const showLoading = useDelayedLoading(() => props.loading)
 	// Custom styles
 	transition: all $transition;
 	border: 0;
-	text-transform: uppercase;
-	font-size: 0.85rem;
-	font-weight: bold;
+	font-size: .875rem;
+	font-weight: 600;
 	block-size: auto;
 	min-block-size: $button-height;
-	box-shadow: var(--shadow-sm);
+	box-shadow: var(--shadow-xs);
 	line-height: 1;
-	padding-inline: .5rem;
-	gap: .25rem;
+	padding-inline: .875rem;
+	gap: .375rem;
 
 	// Default/Primary variant colors
 	background-color: var(--primary);
@@ -109,7 +108,7 @@ const showLoading = useDelayedLoading(() => props.loading)
 	}
 
 	&:hover {
-		box-shadow: var(--shadow-md);
+		box-shadow: var(--shadow-sm);
 		background-color: var(--primary-dark, color-mix(in srgb, var(--primary) 85%, black));
 	}
 
@@ -152,9 +151,11 @@ const showLoading = useDelayedLoading(() => props.loading)
 	&.is-outlined {
 		background-color: var(--scheme-main);
 		color: var(--grey-900);
+		box-shadow: inset 0 0 0 1px var(--surface-border);
 
 		&:hover {
-			color: var(--grey-600);
+			background-color: var(--site-background);
+			box-shadow: inset 0 0 0 1px var(--grey-300);
 		}
 	}
 
