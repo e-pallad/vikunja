@@ -80,7 +80,7 @@ export function defaultFrontendSettings(): FrontendSettings {
 		time_format: TIME_FORMAT.HOURS_24,
 		default_task_relation_type: RELATION_KIND.RELATED,
 		background_brightness: null,
-		always_show_bucket_task_count: false,
+		always_show_bucket_task_count: true,
 		show_last_viewed: true,
 		sidebar_width: null,
 		comment_sort_order: 'asc',

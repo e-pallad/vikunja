@@ -8,6 +8,7 @@ import {
 	faAnglesUp,
 	faArchive,
 	faArrowLeft,
+	faArrowRight,
 	faArrowDownShortWide,
 	faArrowUpFromBracket,
 	faArrowUpRightFromSquare,
@@ -135,6 +136,7 @@ library.add(faAngleLeft)
 library.add(faAngleRight)
 library.add(faArchive)
 library.add(faArrowLeft)
+library.add(faArrowRight)
 library.add(faBars)
 library.add(faBell)
 library.add(faBellSlash)

@@ -22,6 +22,9 @@ const buckets = [
 
 vi.mock('@/client/generated', () => sdk)
 vi.mock('@/message', () => ({error: vi.fn(), success: vi.fn()}))
+vi.mock('@/components/project/partials/BoardIntegrationsPanel.vue', () => ({
+	default: {render: () => null},
+}))
 vi.mock('@/composables/useCurrentProject', () => ({
 	useCurrentProject: () => ({
 		currentProject: {

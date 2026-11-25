@@ -3,6 +3,7 @@
 		:class="{ 'has-background': background, 'menu-active': menuActive }"
 		aria-label="main navigation"
 		class="navbar d-print-none"
+		:style="{'--sidebar-width': sidebarWidthStyle}"
 	>
 		<RouterLink
 			:to="{ name: 'home' }"
@@ -21,9 +22,28 @@
 			v-if="currentProject?.id"
 			class="project-title-wrapper"
 		>
-			<span class="project-title">
-				{{ currentProject.title === '' ? $t('misc.loading') : getProjectTitle(currentProject) }}
-			</span>
+			<div class="project-title-stack">
+				<nav
+					class="project-breadcrumb"
+					:aria-label="$t('project.projects')"
+				>
+					<RouterLink :to="{name: 'projects.index'}">
+						{{ $t('project.projects') }}
+					</RouterLink>
+					<template
+						v-for="parent in breadcrumb"
+						:key="parent.id"
+					>
+						<span aria-hidden="true">/</span>
+						<RouterLink :to="{name: 'project.index', params: {projectId: parent.id}}">
+							{{ getProjectTitle(parent) }}
+						</RouterLink>
+					</template>
+				</nav>
+				<span class="project-title">
+					{{ currentProject.title === '' ? $t('misc.loading') : getProjectTitle(currentProject) }}
+				</span>
+			</div>
 
 			<BaseButton
 				v-if="!isEditorContentEmpty(currentProject.description)"
@@ -62,9 +82,33 @@
 			<span class="project-title">{{ pageTitle }}</span>
 		</div>
 
+		<div
+			id="header-view-switch"
+			class="header-view-switch"
+		/>
+
 		<div class="navbar-end">
 			<TimerBadge />
 			<OpenQuickActions />
+			<div
+				id="header-view-actions"
+				class="header-view-actions"
+			/>
+			<XButton
+				v-if="currentProject?.id && canWriteCurrentProject && currentProject.id > 0"
+				class="header-action"
+				variant="secondary"
+				:to="{name: 'project.settings.share', params: {projectId: currentProject.id}}"
+			>
+				{{ $t('project.share.share') }}
+			</XButton>
+			<XButton
+				class="header-action"
+				icon="plus"
+				@click="baseStore.setQuickActionsActive(true, true)"
+			>
+				{{ $t('quickActions.cmds.newTask') }}
+			</XButton>
 			<Notifications />
 			<Dropdown>
 				<template #trigger="{ toggleOpen, open }">
@@ -153,6 +197,8 @@ import { useBaseStore } from '@/stores/base'
 import { useConfigStore } from '@/stores/config'
 import { useAuthStore } from '@/stores/auth'
 import {useCurrentProject} from '@/composables/useCurrentProject'
+import {useProjects} from '@/composables/useProjects'
+import {useSidebarResize} from '@/composables/useSidebarResize'
 
 const baseStore = useBaseStore()
 const {currentProject} = useCurrentProject()
@@ -163,6 +209,13 @@ const canWriteCurrentProject = computed(() =>
 	currentProject.value.max_permission > Permissions.READ,
 )
 const menuActive = computed(() => baseStore.menuActive)
+const {sidebarWidthStyle} = useSidebarResize()
+
+const {getAncestors} = useProjects()
+// Ancestors without the project itself, so the header reads "Projects / Parent"
+const breadcrumb = computed(() => currentProject.value?.id
+	? getAncestors(currentProject.value).slice(0, -1)
+	: [])
 
 // Standalone pages (no project) surface their route's title in the header.
 const route = useRoute()
@@ -203,8 +256,20 @@ $user-dropdown-width-mobile: 5rem;
 	border-block-end: 1px solid var(--surface-border);
 
 	@media screen and (min-width: $tablet) {
-		padding-inline-start: 2rem;
+		padding-inline: 1.5rem 1rem;
 		align-items: stretch;
+		background: var(--site-background);
+		border-block-end-color: transparent;
+		transition: inset-inline-start $transition-duration;
+
+		// The sidebar carries the logo and spans the full height, so the header starts beside it
+		&.menu-active {
+			inset-inline-start: var(--sidebar-width);
+
+			.logo-link {
+				display: none;
+			}
+		}
 	}
 
 	&.menu-active {
@@ -243,16 +308,84 @@ $user-dropdown-width-mobile: 5rem;
 }
 
 .project-title-wrapper {
-	margin-inline-end: auto;
 	display: flex;
 	align-items: center;
+	flex: 0 1 auto;
 
 	// this makes the truncated text of the project title work
 	// inside the flexbox parent
 	min-inline-size: 0;
 
 	@media screen and (min-width: $tablet) {
-		padding-inline: var(--navbar-gap-width);
+		padding-inline: 0 .25rem;
+	}
+}
+
+.project-title-stack {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	min-inline-size: 0;
+}
+
+.project-breadcrumb {
+	display: none;
+	gap: .3rem;
+	font-size: .75rem;
+	line-height: 1.2;
+	color: var(--text-muted);
+	white-space: nowrap;
+
+	a {
+		color: inherit;
+
+		&:hover {
+			color: var(--text-strong);
+		}
+	}
+
+	@media screen and (min-width: $tablet) {
+		display: flex;
+	}
+}
+
+.header-view-switch {
+	display: none;
+	align-items: center;
+	min-inline-size: 0;
+	flex: 0 1 auto;
+
+	&:empty {
+		display: none;
+	}
+
+	@media screen and (min-width: $tablet) {
+		display: flex;
+	}
+}
+
+.header-view-actions {
+	display: none;
+	align-items: center;
+
+	@media screen and (min-width: $tablet) {
+		display: flex;
+		margin-inline-start: .5rem;
+	}
+
+	&:empty {
+		display: none;
+	}
+}
+
+.header-action {
+	align-self: center;
+	block-size: 2.25rem;
+	margin-inline-start: .5rem;
+	white-space: nowrap;
+
+	@media screen and (max-width: $tablet) {
+		display: none;
 	}
 }
 
@@ -326,11 +459,7 @@ $user-dropdown-width-mobile: 5rem;
 }
 
 .username {
-	font-family: $vikunja-font;
-
-	@media screen and (max-width: $tablet) {
-		display: none;
-	}
+	display: none;
 }
 
 .dropdown-icon {
@@ -340,7 +469,8 @@ $user-dropdown-width-mobile: 5rem;
 .avatar {
 	border-radius: 100%;
 	vertical-align: middle;
-	block-size: 40px;
-	margin-inline-end: .5rem;
+	block-size: 32px;
+	inline-size: 32px;
+	margin-inline-end: .25rem;
 }
 </style>

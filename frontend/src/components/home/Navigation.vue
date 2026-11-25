@@ -178,14 +178,17 @@ const savedFilterProjects = computed(() => projectList.savedFilterProjects)
 
 <style lang="scss" scoped>
 .logo {
-	display: block;
-
-	padding-inline-start: 1rem;
+	display: flex;
+	align-items: center;
+	block-size: calc(#{$navbar-height} - .75rem);
+	padding-inline-start: 1.125rem;
 	margin-inline-end: 1rem;
-	margin-block-end: 1rem;
+	margin-block-end: .5rem;
 
-	@media screen and (min-width: $tablet) {
-		display: none;
+	:deep(svg),
+	:deep(img) {
+		inline-size: 120px;
+		block-size: auto;
 	}
 }
 
@@ -200,7 +203,7 @@ const savedFilterProjects = computed(() => projectList.savedFilterProjects)
 	padding: .75rem 0 1rem;
 	transition: transform $transition-duration ease-in;
 	position: fixed;
-	inset-block-start: $navbar-height;
+	inset-block-start: 0;
 	inset-block-end: 0;
 	inset-inline-start: 0;
 	transform: translateX(-100%);

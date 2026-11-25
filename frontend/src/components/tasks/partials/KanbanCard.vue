@@ -70,6 +70,26 @@
 				<span class="kanban-card__subtasks-count">{{ subtasks.done }}/{{ subtasks.total }}</span>
 			</div>
 
+			<div
+				v-if="checklist.total > 0"
+				class="kanban-card__subtasks kanban-card__checklist"
+				:class="{'is-all-done': checklist.checked === checklist.total}"
+				role="img"
+				:aria-label="$t('task.checklistTotal', {...checklist})"
+			>
+				<Icon
+					:icon="['far', 'check-square']"
+					class="kanban-card__subtasks-icon"
+				/>
+				<span class="kanban-card__subtasks-track">
+					<span
+						class="kanban-card__subtasks-fill"
+						:style="{'inline-size': `${checklist.checked / checklist.total * 100}%`}"
+					/>
+				</span>
+				<span class="kanban-card__subtasks-count">{{ checklist.checked }}/{{ checklist.total }}</span>
+			</div>
+
 			<ProgressBar
 				v-if="task.percent_done > 0"
 				class="task-progress"
@@ -132,10 +152,6 @@
 					:task="task"
 					class="project-task-icon"
 				/>
-				<ChecklistSummary
-					:task="task"
-					class="checklist"
-				/>
 				<AssigneeList
 					v-if="task.assignees.length > 0"
 					:assignees="task.assignees"
@@ -157,7 +173,7 @@ import PriorityLabel from '@/components/tasks/partials/PriorityLabel.vue'
 import ProgressBar from '@/components/misc/ProgressBar.vue'
 import Done from '@/components/misc/Done.vue'
 import Labels from '@/components/tasks/partials/Labels.vue'
-import ChecklistSummary from './ChecklistSummary.vue'
+import {getChecklistStatistics} from '@/helpers/checklistFromText'
 import CommentCount from './CommentCount.vue'
 
 import {getHexColor, getTaskIdentifier} from '@/helpers/task'
@@ -204,6 +220,8 @@ const projectTitle = computed(() => {
 	const project = projectList.projects[props.task.project_id]
 	return project?.title
 })
+
+const checklist = computed(() => getChecklistStatistics(props.task.description ?? ''))
 
 const subtasks = computed(() => {
 	const children = props.task.related_tasks?.subtask ?? []
@@ -415,21 +433,10 @@ $task-background: var(--kanban-card-background);
 			font-size: .75rem;
 		}
 
-		.priority-label {
-			font-size: .75rem;
-			padding: 0 .5rem 0 .25rem;
-
-			.icon {
-				block-size: 1rem;
-				padding: 0 .25rem;
-				margin-block-start: 0;
-			}
-		}
 	}
 
 	.footer .icon,
-	.due-date,
-	.priority-label {
+	.due-date {
 		background: var(--grey-100);
 		border-radius: 5px;
 		padding: .0625rem .375rem;

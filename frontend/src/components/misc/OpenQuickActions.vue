@@ -36,10 +36,58 @@ function openQuickActions() {
 
 <template>
 	<BaseButton
-		class="trigger-button"
+		class="trigger-button search-pill"
 		:title="$t('keyboardShortcuts.quickSearch')"
 		@click="openQuickActions"
 	>
 		<Icon icon="search" />
+		<span class="search-pill__label">{{ $t('navigation.searchTasks') }}</span>
+		<kbd class="search-pill__key">{{ isAppleDevice() ? '⌘K' : 'Ctrl K' }}</kbd>
 	</BaseButton>
 </template>
+
+<style lang="scss" scoped>
+.search-pill__label,
+.search-pill__key {
+	display: none;
+}
+
+@media screen and (min-width: $tablet) {
+	.search-pill {
+		align-self: center;
+		display: inline-flex;
+		align-items: center;
+		gap: .5rem;
+		block-size: 2.25rem;
+		inline-size: 15rem;
+		padding-inline: .75rem .5rem;
+		border: 1px solid var(--surface-border);
+		border-radius: 8px;
+		background: var(--white);
+		font-size: .8125rem !important;
+		color: var(--text-muted) !important;
+		transition: border-color $transition;
+
+		&:hover {
+			border-color: var(--grey-300);
+		}
+	}
+
+	.search-pill__label {
+		display: inline;
+		flex: 1;
+		text-align: start;
+	}
+
+	.search-pill__key {
+		display: inline;
+		padding: 0 .375rem;
+		border: 1px solid var(--surface-border);
+		border-radius: 4px;
+		background: var(--site-background);
+		font-family: inherit;
+		font-size: .6875rem;
+		color: var(--text-muted);
+	}
+}
+</style>

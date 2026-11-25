@@ -285,6 +285,10 @@
 						</p>
 					</template>
 				</Modal>
+				<BoardIntegrationsPanel
+					v-if="!isSavedFilterProject(project)"
+					:project-id="projectId"
+				/>
 			</div>
 		</template>
 	</ProjectWrapper>
@@ -317,6 +321,7 @@ import {useTaskDragState} from '@/composables/useTaskDragState'
 import {useAuthStore} from '@/stores/auth'
 
 import ProjectWrapper from '@/components/project/ProjectWrapper.vue'
+import BoardIntegrationsPanel from '@/components/project/partials/BoardIntegrationsPanel.vue'
 import FilterPopup from '@/components/project/partials/FilterPopup.vue'
 import KanbanCard from '@/components/tasks/partials/KanbanCard.vue'
 import Dropdown from '@/components/misc/Dropdown.vue'
@@ -875,10 +880,36 @@ $crazy-height-calculation: '100vh - 4.5rem - 1.5rem - 1rem - 1.5rem - 11px';
 $crazy-height-calculation-tasks: '#{$crazy-height-calculation} - 1rem - 2.5rem - 2rem - #{$button-height} - 1rem';
 $filter-container-height: '1rem - #{$switch-view-height}';
 
+.kanban-view {
+	display: flex;
+	align-items: flex-start;
+	gap: .75rem;
+
+	> .kanban {
+		flex: 1 1 auto;
+		min-inline-size: 0;
+	}
+
+	> .board-panel {
+		block-size: calc(#{$crazy-height-calculation} + var(--kanban-freed-height, 0px));
+	}
+
+	@media screen and (width >= 1101px) {
+		> .kanban {
+			margin-inline-end: 0;
+		}
+	}
+}
+
+.project-kanban:has(> .switch-view-container.is-in-header) {
+	--kanban-freed-height: calc(#{$switch-view-height} + 1rem);
+}
+
 .kanban {
 	overflow-x: auto;
 	overflow-y: hidden;
-	block-size: calc(#{$crazy-height-calculation});
+	// Tabs and filters moved to the app header free up their row
+	block-size: calc(#{$crazy-height-calculation} + var(--kanban-freed-height, 0px));
 	margin: 0 -1.5rem;
 	padding: 0 1.5rem;
 

@@ -854,6 +854,7 @@
     "retry": "Retry"
   },
   "navigation": {
+    "searchTasks": "Search tasks",
     "overview": "Overview",
     "upcoming": "Upcoming",
     "settings": "Settings",
@@ -1821,6 +1822,18 @@
     "perProject": "Open a project to check",
     "webhooks": "{count} webhook | {count} webhooks",
     "mcpTokens": "{count} active token | {count} active tokens",
+    "connected": "{count} connected",
+    "recent": "Recently updated",
+    "recentEmpty": "No tasks yet",
+    "updated": "Updated {since}",
+    "manage": "Manage integrations",
+    "showPanel": "Show integrations",
+    "hidePanel": "Hide integrations",
+    "purpose": {
+      "n8n": "Workflows via webhooks",
+      "mcp": "Tasks, labels and comments",
+      "slack": "Notifications via webhooks"
+    },
     "state": {
       "active": "Configured",
       "off": "None found",

@@ -219,7 +219,7 @@ let focusRafId: number | null = null
 
 watchEffect(() => {
 	if (active.value) {
-		if (isQuickAddMode) {
+		if (isQuickAddMode || baseStore.quickActionsNewTask) {
 			selectedCmd.value = commands.value.newTask
 		}
 

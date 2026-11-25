@@ -47,6 +47,7 @@ export const useBaseStore = defineStore('base', () => {
 	const hasTasks = ref(false)
 	const keyboardShortcutsActive = ref(false)
 	const quickActionsActive = ref(false)
+	const quickActionsNewTask = ref(false)
 	const logoVisible = ref(true)
 	const updateAvailable = ref(false)
 
@@ -74,8 +75,9 @@ export const useBaseStore = defineStore('base', () => {
 		keyboardShortcutsActive.value = value
 	}
 
-	function setQuickActionsActive(value: boolean) {
+	function setQuickActionsActive(value: boolean, startWithNewTask = false) {
 		quickActionsActive.value = value
+		quickActionsNewTask.value = value && startWithNewTask
 	}
 
 	// SPA logout keeps this store alive, so reset on identity change.
@@ -157,6 +159,7 @@ export const useBaseStore = defineStore('base', () => {
 		hasTasks: readonly(hasTasks),
 		keyboardShortcutsActive: readonly(keyboardShortcutsActive),
 		quickActionsActive: readonly(quickActionsActive),
+		quickActionsNewTask: readonly(quickActionsNewTask),
 		logoVisible: readonly(logoVisible),
 		updateAvailable: readonly(updateAvailable),
 

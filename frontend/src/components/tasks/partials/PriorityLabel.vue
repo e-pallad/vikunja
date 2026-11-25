@@ -51,22 +51,55 @@ const minimumPriority = computed(() => {
 </script>
 
 <style lang="scss" scoped>
+// Tinted pills with dark text: readable at small sizes, unlike coloured text on white
+.priority-label {
+	--pill-bg: hsl(220, 80%, 94%);
+	--pill-text: hsl(224, 62%, 40%);
+
+	display: inline-flex;
+	align-items: center;
+	gap: .25rem;
+	padding: .0625rem .4375rem;
+	border-radius: 5px;
+	background: var(--pill-bg);
+	color: var(--pill-text);
+	font-size: .75rem;
+	font-weight: 600;
+	line-height: 1.5;
+	vertical-align: middle;
+}
+
 .high-priority {
-	color: var(--danger-text);
+	--pill-bg: hsl(7, 78%, 93%);
+	--pill-text: hsl(7, 62%, 36%);
+
 	inline-size: auto !important; // To override the width set in tasks
 }
 
 .not-so-high {
-	color: var(--warning);
+	--pill-bg: hsl(39, 86%, 92%);
+	--pill-text: hsl(36, 83%, 26%);
 }
 
-.negligible {
-	color: var(--info);
+:global(.dark) .priority-label {
+	--pill-bg: hsla(220, 80%, 60%, .18);
+	--pill-text: hsl(220, 90%, 80%);
+}
+
+:global(.dark) .high-priority {
+	--pill-bg: hsla(7, 78%, 60%, .2);
+	--pill-text: hsl(7, 90%, 80%);
+}
+
+:global(.dark) .not-so-high {
+	--pill-bg: hsla(39, 86%, 55%, .2);
+	--pill-text: hsl(39, 90%, 75%);
 }
 
 .icon {
-	vertical-align: top;
 	inline-size: auto !important;
-	padding-inline-end: .5rem;
+	block-size: auto;
+	padding: 0;
+	font-size: .6875rem;
 }
 </style>
