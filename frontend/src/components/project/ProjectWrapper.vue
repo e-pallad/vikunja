@@ -137,6 +137,7 @@ function checkOverflow() {
 	if (!switchViewRef.value || !switchViewContainerRef.value) {
 		return
 	}
+	// In the header the tabs scroll sideways instead of folding into a dropdown
 	if (tabsInHeader.value) {
 		isOverflowing.value = false
 		overflowChecked.value = true
@@ -151,12 +152,13 @@ function checkOverflow() {
 // The tabs live in the app header on desktop. Link shares have no header, and a
 // kept-alive wrapper that is not on screen must hand the header back.
 const isMobile = useIsMobile()
-const hasHeaderTarget = ref(false)
+const headerTarget = ref<HTMLElement | null>(null)
+const hasHeaderTarget = computed(() => headerTarget.value !== null)
 const isShown = ref(true)
 const tabsInHeader = computed(() => hasHeaderTarget.value && isShown.value && !isMobile.value)
 
 onMounted(() => {
-	hasHeaderTarget.value = document.getElementById('header-view-switch') !== null
+	headerTarget.value = document.getElementById('header-view-switch')
 	checkOverflow()
 })
 onActivated(() => {
@@ -259,10 +261,14 @@ function getViewRoute(view: ProjectView) {
 	cursor: pointer;
 	display: inline-flex;
 	align-items: center;
-	gap: .25rem;
-	font-weight: bold;
-	color: var(--switch-view-color);
-	background: var(--switch-view-active-background);
+	gap: .375rem;
+	padding: .4375rem .75rem;
+	font-weight: 600;
+	color: var(--text-strong);
+	white-space: nowrap;
+	max-inline-size: 100%;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 .dropdown-icon {

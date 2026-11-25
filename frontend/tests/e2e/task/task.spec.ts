@@ -553,7 +553,8 @@ test.describe('Task', () => {
 			await page.locator(`li[data-project-id="${projects[0].id}"] .list-menu-link`).first().click()
 
 			await expect(page).toHaveURL(/\/projects\/1\/\d+/)
-			await expect(page.locator('.switch-view-container')).toBeVisible()
+			// The view tabs live in the app header on desktop
+			await expect(page.locator('.switch-view').first()).toBeVisible()
 			await expect(page.locator('.task-view')).toHaveCount(0)
 		})
 
