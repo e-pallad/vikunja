@@ -240,6 +240,8 @@ async function cancel(element: HTMLInputElement) {
 	position: absolute;
 	inset-inline-end: 1.25rem;
 	inset-block-start: 1.1rem;
+	// The editable title spans the full width and would otherwise take the click
+	z-index: 1;
 
 	@media screen and (max-width: $tablet) {
 		display: block;

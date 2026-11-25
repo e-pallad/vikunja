@@ -96,7 +96,7 @@
 			/>
 			<XButton
 				v-if="currentProject?.id && canWriteCurrentProject && currentProject.id > 0"
-				class="header-action"
+				class="header-action header-action--share"
 				variant="secondary"
 				:to="{name: 'project.settings.share', params: {projectId: currentProject.id}}"
 			>
@@ -107,7 +107,7 @@
 				icon="plus"
 				@click="openNewTask"
 			>
-				{{ $t('quickActions.cmds.newTask') }}
+				<span class="header-action__label">{{ $t('quickActions.cmds.newTask') }}</span>
 			</XButton>
 			<Notifications />
 			<Dropdown>
@@ -322,6 +322,9 @@ $user-dropdown-width-mobile: 5rem;
 
 	@media screen and (min-width: $tablet) {
 		padding-inline: 0 .25rem;
+		// The tabs give way first; a long title truncates instead of pushing them out
+		flex-shrink: 0;
+		max-inline-size: 22rem;
 	}
 }
 
@@ -358,6 +361,17 @@ $user-dropdown-width-mobile: 5rem;
 	align-items: center;
 	min-inline-size: 0;
 	flex: 0 1 auto;
+	// Tabs that don't fit scroll sideways rather than sliding under the actions
+	overflow-x: auto;
+	scrollbar-width: none;
+
+	&::-webkit-scrollbar {
+		display: none;
+	}
+
+	> :deep(*) {
+		flex-shrink: 0;
+	}
 
 	&:empty {
 		display: none;
@@ -379,6 +393,22 @@ $user-dropdown-width-mobile: 5rem;
 
 	&:empty {
 		display: none;
+	}
+}
+
+// Below this width the header runs out of room at the usual 260px sidebar
+@media screen and (width <= 1439px) {
+	.header-action--share {
+		display: none;
+	}
+
+	.header-action__label {
+		position: absolute;
+		inline-size: 1px;
+		block-size: 1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
 	}
 }
 

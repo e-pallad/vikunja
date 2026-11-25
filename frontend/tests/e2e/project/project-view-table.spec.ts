@@ -30,16 +30,16 @@ test.describe('Project View Table', () => {
 		await loadTasksPromise
 
 		// Click the Columns button to open the column selector
-		await page.locator('.project-table .filter-container .button').filter({hasText: 'Columns'}).click()
+		await page.locator('.filter-container .button').filter({hasText: 'Columns'}).click()
 
 		// Click Priority checkbox to enable Priority column (click on the text like Cypress does)
-		await page.locator('.project-table .filter-container .card.columns-filter .card-content').getByText('Priority').click()
+		await page.locator('.filter-container .card.columns-filter .card-content').getByText('Priority').click()
 
 		// Wait for Priority checkbox to be checked
 		await expect(page.getByRole('checkbox', {name: 'Checkbox Priority'})).toBeChecked()
 
 		// Click Done checkbox to disable Done column (click on the text like Cypress does)
-		await page.locator('.project-table .filter-container .card.columns-filter .card-content').getByText('Done', {exact: true}).click()
+		await page.locator('.filter-container .card.columns-filter .card-content').getByText('Done', {exact: true}).click()
 
 		// Wait for Done checkbox to be unchecked
 		await expect(page.getByRole('checkbox', {name: 'Checkbox Done', exact: true})).not.toBeChecked()

@@ -57,10 +57,10 @@ function openQuickActions() {
 		align-self: center;
 		display: inline-flex;
 		align-items: center;
+		justify-content: center;
 		gap: .5rem;
 		block-size: 2.25rem;
-		inline-size: 15rem;
-		padding-inline: .75rem .5rem;
+		inline-size: 2.25rem;
 		border: 1px solid var(--surface-border);
 		border-radius: 8px;
 		background: var(--white);
@@ -71,6 +71,15 @@ function openQuickActions() {
 		&:hover {
 			border-color: var(--grey-300);
 		}
+	}
+}
+
+// Wide screens have room for the full search field
+@media screen and (width >= 1440px) {
+	.search-pill {
+		justify-content: flex-start;
+		inline-size: 15rem;
+		padding-inline: .75rem .5rem;
 	}
 
 	.search-pill__label {

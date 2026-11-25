@@ -49,7 +49,9 @@
           opacity: 0;
         }
 
-        &:hover .menu-list-dropdown {
+        &:hover .menu-list-dropdown,
+        // Below 1 the opacity makes a stacking context that would trap the open menu under the next rows
+        .menu-list-dropdown:has([aria-expanded="true"]) {
           opacity: 1;
         }
       }

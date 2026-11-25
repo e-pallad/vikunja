@@ -477,7 +477,7 @@ test.describe('Project View Kanban', () => {
 	test('Shows a button to filter the kanban board', async ({authenticatedPage: page}) => {
 		await page.goto('/projects/1/4')
 
-		await expect(page.locator('.project-kanban .filter-container .base-button')).toBeVisible()
+		await expect(page.locator('.filter-container .base-button')).toBeVisible()
 	})
 
 	test('Should remove a task from the board when deleting it', async ({
@@ -623,8 +623,27 @@ test.describe('Project View Kanban', () => {
 		await expect(page.locator('.kanban .task')).toHaveCount(1)
 	})
 
-	test('Should not show task count by default when bucket has no limit', async ({authenticatedPage: page}) => {
+	test('Should show task count by default when bucket has no limit', async ({authenticatedPage: page}) => {
 		await createTaskWithBuckets(buckets, 5)
+		await page.goto('/projects/1/4')
+
+		// Wait for buckets to load
+		await expect(page.locator('.kanban .bucket .title').filter({hasText: buckets[0].title})).toBeVisible()
+
+		const limitSpan = page.locator('.kanban .bucket .bucket-header span.limit').first()
+		await expect(limitSpan).toBeVisible()
+		await expect(limitSpan).toContainText('5')
+	})
+
+	test('Should not show task count when alwaysShowBucketTaskCount setting is disabled', async ({authenticatedPage: page, apiContext, userToken}) => {
+		await createTaskWithBuckets(buckets, 5)
+
+		await updateUserSettings(apiContext, userToken, {
+			frontend_settings: {
+				always_show_bucket_task_count: false,
+			},
+		})
+
 		await page.goto('/projects/1/4')
 
 		// Wait for buckets to load
