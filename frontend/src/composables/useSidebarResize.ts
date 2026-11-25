@@ -3,7 +3,7 @@ import {ref, computed, onMounted, onUnmounted, watch} from 'vue'
 import {useAuthStore} from '@/stores/auth'
 
 import {useIsMobile} from '@/composables/useIsMobile'
-const DEFAULT_SIDEBAR_WIDTH = 300
+const DEFAULT_SIDEBAR_WIDTH = 260
 const MIN_SIDEBAR_WIDTH = 200
 const MAX_SIDEBAR_WIDTH = 500
 

@@ -303,4 +303,30 @@ describe('KanbanCard', () => {
 		expect(observer.observing).toBe(false)
 		expect(attachments.fetchAttachmentUrl).not.toHaveBeenCalled()
 	})
+
+	it('shows how many subtasks are done', () => {
+		const wrapper = mountCard(normalizeTask({
+			id: 9,
+			project_id: 1,
+			title: 'Parent',
+			related_tasks: {
+				subtask: [
+					{id: 10, title: 'One', done: true},
+					{id: 11, title: 'Two', done: false},
+					{id: 12, title: 'Three', done: true},
+				],
+			},
+		}))
+
+		const summary = wrapper.get('.kanban-card__subtasks')
+		expect(summary.text()).toContain('2/3')
+		expect(summary.get('.kanban-card__subtasks-fill').attributes('style')).toContain('inline-size: 66.66')
+		expect(summary.classes()).not.toContain('is-all-done')
+	})
+
+	it('hides the subtask summary when a task has no subtasks', () => {
+		const wrapper = mountCard(normalizeTask({id: 13, project_id: 1, title: 'Alone'}))
+
+		expect(wrapper.find('.kanban-card__subtasks').exists()).toBe(false)
+	})
 })

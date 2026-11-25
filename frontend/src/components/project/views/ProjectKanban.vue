@@ -868,9 +868,9 @@ function unCollapseBucket(bucket: BucketResponse) {
 
 <style lang="scss">
 $ease-out: all .3s cubic-bezier(0.23, 1, 0.32, 1);
-$bucket-width: 300px;
-$bucket-header-height: 60px;
-$bucket-right-margin: 1rem;
+$bucket-width: 272px;
+$bucket-header-height: 52px;
+$bucket-right-margin: .75rem;
 $crazy-height-calculation: '100vh - 4.5rem - 1.5rem - 1rem - 1.5rem - 11px';
 $crazy-height-calculation-tasks: '#{$crazy-height-calculation} - 1rem - 2.5rem - 2rem - #{$button-height} - 1rem';
 $filter-container-height: '1rem - #{$switch-view-height}';
@@ -923,7 +923,8 @@ $filter-container-height: '1rem - #{$switch-view-height}';
 	}
 
 	.bucket {
-		border-radius: $radius;
+		border-radius: 14px;
+		background-color: var(--kanban-column-background);
 		position: relative;
 
 		margin: 0 $bucket-right-margin 0 0;
@@ -945,8 +946,8 @@ $filter-container-height: '1rem - #{$switch-view-height}';
 		}
 
 		.task-item {
-			background-color: var(--grey-100);
-			padding: .25rem .5rem;
+			background-color: var(--kanban-column-background);
+			padding: .25rem .625rem;
 			position: relative;
 
 			&:first-of-type {
@@ -973,9 +974,10 @@ $filter-container-height: '1rem - #{$switch-view-height}';
 		}
 
 		h2 {
-			font-size: 1rem;
+			font-size: .875rem;
 			margin: 0;
-			font-weight: 600 !important;
+			font-weight: 650 !important;
+			color: var(--text-strong);
 		}
 
 		&.new-bucket {
@@ -987,7 +989,8 @@ $filter-container-height: '1rem - #{$switch-view-height}';
 			background: transparent;
 
 			.button {
-				background: var(--grey-100);
+				background: var(--kanban-column-background);
+				border-radius: 14px;
 				inline-size: 100%;
 			}
 		}
@@ -1007,20 +1010,29 @@ $filter-container-height: '1rem - #{$switch-view-height}';
 	}
 
 	.bucket-header {
-		background-color: var(--grey-100);
+		background-color: var(--kanban-column-background);
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: .5rem;
+		gap: .25rem;
+		padding: .5rem .5rem .25rem .75rem;
 		block-size: $bucket-header-height;
 
 		.icon.has-text-success {
 			cursor: pointer;
 		}
 
+		.options {
+			margin-inline-start: auto;
+		}
+
 		.limit {
-			padding: 0 .5rem;
-			font-weight: bold;
+			padding: .0625rem .5rem;
+			border-radius: 999px;
+			background: var(--kanban-column-count-background);
+			color: var(--grey-600);
+			font-size: .75rem;
+			font-weight: 600;
 
 			&.is-max {
 				color: var(--danger-text);
@@ -1028,8 +1040,13 @@ $filter-container-height: '1rem - #{$switch-view-height}';
 		}
 
 		.title.input {
+			flex: 0 1 auto;
+			min-inline-size: 0;
+			background: transparent;
+			border-color: transparent;
+			box-shadow: none;
 			block-size: auto;
-			padding: .4rem .5rem;
+			padding: .4rem .25rem;
 			display: inline-block;
 			cursor: pointer;
 		}
@@ -1044,19 +1061,25 @@ $filter-container-height: '1rem - #{$switch-view-height}';
 		inset-block-end: 0;
 		z-index: 2;
 		block-size: min-content;
-		padding: .5rem;
-		background-color: var(--grey-100);
-		border-end-start-radius: $radius;
-		border-end-end-radius: $radius;
+		padding: .25rem .625rem .625rem;
+		background-color: var(--kanban-column-background);
+		border-end-start-radius: 14px;
+		border-end-end-radius: 14px;
 		transform: none;
 		// At fractional device pixel ratios the scroll clip ends below the sticky footer, showing a sliver of tasks
-		box-shadow: 0 1px 0 var(--grey-100);
+		box-shadow: 0 1px 0 var(--kanban-column-background);
 
 		.button {
 			background-color: transparent;
+			justify-content: flex-start;
+			inline-size: 100%;
+			text-transform: none;
+			font-weight: 500;
+			color: var(--text-muted);
 
 			&:hover {
-				background-color: var(--white);
+				background-color: var(--kanban-column-count-background);
+				color: var(--text-strong);
 			}
 		}
 	}

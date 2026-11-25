@@ -21,13 +21,12 @@ withDefaults(defineProps<{
 
 <style lang="scss" scoped>
 .is-done {
-  // bright brand green with fixed dark text passes contrast in both themes
-  background: var(--success);
-  color: hsl(215, 27.9%, 16.9%);
+  background: var(--done-badge-background);
+  color: var(--done-badge-text);
   padding: .5rem;
-  font-weight: bold;
+  font-weight: 600;
   line-height: 1;
-  border-radius: 4px;
+  border-radius: 5px;
   text-align: center;
 }
 

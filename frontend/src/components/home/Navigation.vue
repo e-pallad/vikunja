@@ -18,6 +18,7 @@
 					height="48"
 				/>
 			</RouterLink>
+			<InstanceBadge />
 			<menu class="menu-list other-menu-items">
 				<li>
 					<RouterLink
@@ -90,6 +91,9 @@
 			variant="small"
 		/>
 		<template v-else>
+			<h2 class="menu-section-heading">
+				{{ $t('project.projects') }}
+			</h2>
 			<nav
 				v-if="favoriteProjects.length"
 				class="menu"
@@ -126,6 +130,8 @@
 			</nav>
 		</template>
 
+		<IntegrationsStatus />
+
 		<PoweredByLink
 			class="mbs-auto"
 			utm-medium="navigation"
@@ -153,6 +159,8 @@ import {useProjects} from '@/composables/useProjects'
 import {useConfigStore} from '@/stores/config'
 import {PRO_FEATURE} from '@/constants/proFeatures'
 import ProjectsNavigation from '@/components/home/ProjectsNavigation.vue'
+import IntegrationsStatus from '@/components/home/IntegrationsStatus.vue'
+import InstanceBadge from '@/components/home/InstanceBadge.vue'
 import {useSidebarResize} from '@/composables/useSidebarResize'
 
 const baseStore = useBaseStore()
@@ -186,9 +194,10 @@ const savedFilterProjects = computed(() => projectList.savedFilterProjects)
 
 	display: flex;
 	flex-direction: column;
-	background: var(--site-background);
+	background: var(--sidebar-background);
+	border-inline-end: 1px solid var(--surface-border);
 	color: $vikunja-nav-color;
-	padding: 1rem 0;
+	padding: .75rem 0 1rem;
 	transition: transform $transition-duration ease-in;
 	position: fixed;
 	inset-block-start: $navbar-height;
@@ -237,19 +246,29 @@ const savedFilterProjects = computed(() => projectList.savedFilterProjects)
 
 .top-menu .menu-list {
 	li {
-		font-weight: 600;
+		font-weight: 500;
+		font-size: .875rem;
 		font-family: $vikunja-font;
 	}
 
 	.list-menu-link,
 	li > a {
-		padding-inline-start: 2rem;
+		padding-inline-start: .75rem;
 		display: inline-block;
 
 		.icon {
 			padding-block-end: .25rem;
 		}
 	}
+}
+
+.menu-section-heading {
+	margin: 1.25rem 1.25rem .375rem;
+	font-size: .6875rem;
+	font-weight: 600;
+	letter-spacing: .06em;
+	text-transform: uppercase;
+	color: var(--text-muted);
 }
 
 .menu + .menu {

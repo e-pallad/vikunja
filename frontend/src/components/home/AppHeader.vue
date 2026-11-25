@@ -199,7 +199,8 @@ $user-dropdown-width-mobile: 5rem;
 	gap: var(--navbar-gap-width);
 	min-block-size: $navbar-height;
 
-	background: var(--site-background);
+	background: var(--sidebar-background);
+	border-block-end: 1px solid var(--surface-border);
 
 	@media screen and (min-width: $tablet) {
 		padding-inline-start: 2rem;
@@ -233,7 +234,6 @@ $user-dropdown-width-mobile: 5rem;
 }
 
 .menu-button {
-	margin-inline-end: auto;
 	align-self: stretch;
 	flex: 0 0 auto;
 
@@ -243,7 +243,7 @@ $user-dropdown-width-mobile: 5rem;
 }
 
 .project-title-wrapper {
-	margin-inline: auto;
+	margin-inline-end: auto;
 	display: flex;
 	align-items: center;
 
@@ -264,7 +264,10 @@ $user-dropdown-width-mobile: 5rem;
 	white-space: nowrap;
 
 	@media screen and (min-width: $tablet) {
-		font-size: 1.75rem;
+		font-size: 1.3125rem;
+		font-weight: 700;
+		letter-spacing: -.015em;
+		color: var(--text-strong);
 	}
 }
 
@@ -288,6 +291,7 @@ $user-dropdown-width-mobile: 5rem;
 
 .navbar-end {
 	flex: 0 0 auto;
+	margin-inline-start: auto;
 	display: flex;
 	align-items: stretch;
 

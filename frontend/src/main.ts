@@ -1,4 +1,5 @@
 import './client/inviteLink'
+import '@fontsource-variable/inter/wght.css'
 import {createApp} from 'vue'
 import {VueQueryPlugin} from '@tanstack/vue-query'
 
