@@ -1036,6 +1036,8 @@ $filter-container-height: '1rem - #{$switch-view-height}';
 
 			&.is-max {
 				color: var(--danger-text);
+				// the plain count pill drops red text below 4.5:1
+				background: hsla(var(--danger-h), var(--danger-s), 60%, .12);
 			}
 		}
 

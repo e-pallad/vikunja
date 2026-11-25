@@ -60,13 +60,26 @@ const headingId = useId()
 const baseStore = useBaseStore()
 const configStore = useConfigStore()
 
-const mcpInfo = useQuery(mcpInfoQuery())
-const tokens = useQuery(allApiTokensQuery())
+// The sidebar shows an unknown state on failure; a toast on every page would be noise.
+const QUIET = {
+	retry: false,
+	meta: {handlesError: true},
+} as const
+
+const mcpInfo = useQuery({
+	...mcpInfoQuery(),
+	...QUIET,
+})
+const tokens = useQuery({
+	...allApiTokensQuery(),
+	...QUIET,
+})
 
 const webhooksEnabled = computed(() => configStore.webhooks_enabled)
 const projectId = computed(() => baseStore.currentProjectId)
 const userWebhooks = useQuery(computed(() => ({
 	...webhooksQuery({kind: 'user'}, 1),
+	...QUIET,
 	enabled: webhooksEnabled.value,
 })))
 const projectWebhooks = useQuery(computed(() => ({
@@ -74,6 +87,7 @@ const projectWebhooks = useQuery(computed(() => ({
 		kind: 'project',
 		projectId: projectId.value,
 	}, 1),
+	...QUIET,
 	enabled: webhooksEnabled.value && projectId.value > 0,
 })))
 
@@ -102,7 +116,7 @@ function webhookItem(id: 'n8n' | 'slack', name: string, icon: IconProp) {
 		detail = t('integrations.perProject')
 	} else if (webhooksLoaded.value && projectWebhooks.isSuccess.value) {
 		state = 'off'
-		detail = t('integrations.notConfigured')
+		detail = t('integrations.noWebhook')
 	}
 	return {
 		id,
@@ -127,7 +141,7 @@ const items = computed(() => {
 			state: mcpState,
 			detail: !mcpReady
 				? t('integrations.unavailable')
-				: mcpCount > 0 ? t('integrations.mcpTokens', mcpCount) : t('integrations.notConfigured'),
+				: mcpCount > 0 ? t('integrations.mcpTokens', mcpCount) : t('integrations.noMcpToken'),
 			to: {name: 'user.settings.mcp'} as RouteLocationRaw,
 		},
 		webhookItem('slack', 'Slack', 'hashtag'),

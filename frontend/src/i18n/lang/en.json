@@ -1815,14 +1815,15 @@
     "title": "Integrations",
     "localInstance": "Local instance",
     "selfHosted": "Self-hosted",
-    "notConfigured": "Not set up",
+    "noWebhook": "No webhook found",
+    "noMcpToken": "No MCP token",
     "unavailable": "Status unavailable",
     "perProject": "Open a project to check",
     "webhooks": "{count} webhook | {count} webhooks",
     "mcpTokens": "{count} active token | {count} active tokens",
     "state": {
       "active": "Configured",
-      "off": "Not set up",
+      "off": "None found",
       "unknown": "Status unknown"
     }
   }
