@@ -48,6 +48,7 @@ import {
 	faGripLines,
 	faHeader,
 	faHistory,
+	faHourglassEnd,
 	faImage,
 	faKeyboard,
 	faLayerGroup,
@@ -76,6 +77,7 @@ import {
 	faTags,
 	faTasks,
 	faTh,
+	faTableList,
 	faTimes,
 	faTrashAlt,
 	faUser,
@@ -168,6 +170,7 @@ library.add(faForward)
 library.add(faGripLines)
 library.add(faHeader)
 library.add(faHistory)
+library.add(faHourglassEnd)
 library.add(faImage)
 library.add(faKeyboard)
 library.add(faLayerGroup)
@@ -201,6 +204,7 @@ library.add(faTachometerAlt)
 library.add(faTags)
 library.add(faTasks)
 library.add(faTh)
+library.add(faTableList)
 library.add(faTimes)
 library.add(faTimesCircle)
 library.add(faTrashAlt)

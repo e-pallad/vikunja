@@ -11,7 +11,6 @@
 		}"
 		:style="{'background-color': color ?? undefined}"
 		:data-task-id="task.id"
-		:data-project-id="task.project_id"
 		:data-is-overdue="isOverdue || undefined"
 		@click.exact="openTaskDetail()"
 		@click.ctrl="() => toggleTaskDone(task)"
@@ -117,7 +116,11 @@
 					class="due-date"
 				>
 					<span class="icon">
-						<Icon :icon="['far', 'calendar-alt']" />
+						<OverdueIndicator v-if="isOverdue" />
+						<Icon
+							v-else
+							:icon="['far', 'calendar-alt']"
+						/>
 					</span>
 					<time :datetime="formatISO(task.due_date)">
 						{{ formatDisplayDate(task.due_date) }}
@@ -158,6 +161,17 @@
 					:avatar-size="22"
 					class="kanban-card__assignees"
 				/>
+				<span
+					v-if="showUpdated"
+					v-tooltip="{content: updatedTooltip, popperClass: 'is-multiline'}"
+					class="updated"
+				>
+					<Icon :icon="['far', 'clock']" />
+					<span class="is-sr-only">{{ updatedLabel }}</span>
+					<time :datetime="formatISO(task.updated)">
+						{{ formatDateSince(task.updated) }}
+					</time>
+				</span>
 			</div>
 		</div>
 	</div>
@@ -166,10 +180,12 @@
 <script lang="ts" setup>
 import {computed, onBeforeUnmount, onMounted, ref, useTemplateRef, watch} from 'vue'
 import {useRouter} from 'vue-router'
+import {useI18n} from 'vue-i18n'
 
 import {useGlobalNow} from '@/composables/useGlobalNow'
 
 import PriorityLabel from '@/components/tasks/partials/PriorityLabel.vue'
+import OverdueIndicator from '@/components/tasks/partials/OverdueIndicator.vue'
 import ProgressBar from '@/components/misc/ProgressBar.vue'
 import Done from '@/components/misc/Done.vue'
 import Labels from '@/components/tasks/partials/Labels.vue'
@@ -177,13 +193,14 @@ import {getChecklistStatistics} from '@/helpers/checklistFromText'
 import CommentCount from './CommentCount.vue'
 
 import {getHexColor, getTaskIdentifier} from '@/helpers/task'
+import {getDisplayName} from '@/helpers/user'
 import type {Task as ITask} from '@/client/generated'
 import type {TaskResponse} from '@/client/queries/tasks'
 import {canPreviewImage} from '@/helpers/attachmentPreview'
 import {fetchAttachmentUrl, releaseAttachmentUrl} from '@/helpers/attachments'
 import {ApiError} from '@/client/problem'
 
-import {formatDateLong, formatDisplayDate, formatISO} from '@/helpers/time/formatDate'
+import {formatDateLong, formatDateSince, formatDisplayDate, formatISO} from '@/helpers/time/formatDate'
 import {colorIsDark} from '@/helpers/color/colorIsDark'
 import {useUpdateTaskMutation} from '@/client/queries/taskMutations'
 import AssigneeList from '@/components/tasks/partials/AssigneeList.vue'
@@ -192,6 +209,7 @@ import {isEditorContentEmpty} from '@/helpers/editorContentEmpty'
 import {useProjects} from '@/composables/useProjects'
 import {useDelayedLoading} from '@/composables/useDelayedLoading'
 import {TASK_REPEAT_MODES} from '@/types/IRepeatMode'
+import {useAuthStore} from '@/stores/auth'
 
 const props = defineProps<{
 	task: TaskResponse,
@@ -203,6 +221,8 @@ const emit = defineEmits<{
 }>()
 
 const router = useRouter()
+const {t} = useI18n({useScope: 'global'})
+const authStore = useAuthStore()
 const updateTask = useUpdateTaskMutation()
 
 const loadingInternal = ref(false)
@@ -240,6 +260,21 @@ const isOverdue = computed(() => (
 	new Date(props.task.due_date ?? 0).getTime() > 0 &&
 	new Date(props.task.due_date ?? 0).getTime() <= now.value.getTime()
 ))
+
+const showUpdated = computed(() => authStore.settings.frontend_settings.show_kanban_card_updated)
+
+// The server sets updated to created on creation, so equal values mean the task was never changed.
+const wasUpdated = computed(() => +new Date(props.task.created ?? 0) !== +new Date(props.task.updated ?? 0))
+
+const updatedLabel = computed(() => t(wasUpdated.value ? 'task.attributes.updated' : 'task.attributes.created'))
+
+const updatedTooltip = computed(() => {
+	const created = t('task.detail.created', [formatDateLong(props.task.created), getDisplayName(props.task.created_by)])
+	if (!wasUpdated.value) {
+		return created
+	}
+	return `${t('task.detail.updated', [formatDateLong(props.task.updated)])}\n${created}`
+})
 
 async function toggleTaskDone(task: TaskResponse) {
 	const isRecurringTask = task.repeat_after > 0 || task.repeat_mode === TASK_REPEAT_MODES.REPEAT_MODE_MONTH
@@ -435,6 +470,15 @@ $task-background: var(--kanban-card-background);
 
 	}
 
+	.updated {
+		display: flex;
+		align-items: center;
+		gap: .25rem;
+		padding: 0 .25rem;
+		font-size: .75rem;
+		color: var(--grey-500);
+	}
+
 	.footer .icon,
 	.due-date {
 		background: var(--grey-100);
@@ -476,7 +520,7 @@ $task-background: var(--kanban-card-background);
 		}
 
 		// beat component-level color: var(--grey-500) so secondary text tracks the guaranteed main text color
-		.task-id, .project-title, .kanban-card__subtasks {
+		.task-id, .project-title, .updated, .kanban-card__subtasks {
 			color: inherit;
 		}
 
@@ -502,7 +546,7 @@ $task-background: var(--kanban-card-background);
 		}
 
 		// beat component-level color: var(--grey-500) so secondary text tracks the guaranteed main text color
-		.task-id, .project-title, .kanban-card__subtasks {
+		.task-id, .project-title, .updated, .kanban-card__subtasks {
 			color: inherit;
 		}
 

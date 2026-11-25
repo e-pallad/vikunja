@@ -6,6 +6,7 @@ import {useQuery} from '@tanstack/vue-query'
 import {checkAndSetApiUrl, ERROR_NO_API_URL} from '@/helpers/checkAndSetApiUrl'
 import {InvalidApiUrlProvidedError, NoApiUrlProvidedError} from '@/helpers/apiUrl'
 import {isDesktopApp} from '@/helpers/desktopAuth'
+import type {QuickAddPrefill} from '@/helpers/quickAddPrefill'
 
 import {useMenuActive} from '@/composables/useMenuActive'
 
@@ -47,7 +48,7 @@ export const useBaseStore = defineStore('base', () => {
 	const hasTasks = ref(false)
 	const keyboardShortcutsActive = ref(false)
 	const quickActionsActive = ref(false)
-	const quickActionsNewTask = ref(false)
+	const quickAddPrefill = ref<QuickAddPrefill | null>(null)
 	const logoVisible = ref(true)
 	const updateAvailable = ref(false)
 
@@ -75,9 +76,9 @@ export const useBaseStore = defineStore('base', () => {
 		keyboardShortcutsActive.value = value
 	}
 
-	function setQuickActionsActive(value: boolean, startWithNewTask = false) {
+	function setQuickActionsActive(value: boolean, prefill: QuickAddPrefill | null = null) {
 		quickActionsActive.value = value
-		quickActionsNewTask.value = value && startWithNewTask
+		quickAddPrefill.value = value ? prefill : null
 	}
 
 	// SPA logout keeps this store alive, so reset on identity change.
@@ -159,7 +160,7 @@ export const useBaseStore = defineStore('base', () => {
 		hasTasks: readonly(hasTasks),
 		keyboardShortcutsActive: readonly(keyboardShortcutsActive),
 		quickActionsActive: readonly(quickActionsActive),
-		quickActionsNewTask: readonly(quickActionsNewTask),
+		quickAddPrefill: readonly(quickAddPrefill),
 		logoVisible: readonly(logoVisible),
 		updateAvailable: readonly(updateAvailable),
 

@@ -17,8 +17,11 @@
 package migration
 
 import (
+	"errors"
 	"fmt"
+	"io/fs"
 	"net/http"
+	"strconv"
 	"time"
 
 	"code.vikunja.io/api/pkg/web"
@@ -70,6 +73,31 @@ func (err *ErrUpstreamRequestFailed) HTTPError() web.HTTPError {
 		// The upstream response body may contain anything, don't hand it back over the api.
 		Message: "The service you are migrating from returned an error.",
 	}
+}
+
+// ErrSpoolFailed is a local disk error while spooling an attachment, as opposed to a download error.
+type ErrSpoolFailed struct {
+	Err error
+}
+
+// IsErrSpoolFailed checks if an error is or wraps ErrSpoolFailed
+func IsErrSpoolFailed(err error) bool {
+	var spoolErr *ErrSpoolFailed
+	return errors.As(err, &spoolErr)
+}
+
+func (err *ErrSpoolFailed) Error() string {
+	const msg = "could not store a downloaded attachment on disk"
+	// The path would reach the user's failure mail and status.
+	var pathErr *fs.PathError
+	if errors.As(err.Err, &pathErr) {
+		return msg + ": " + pathErr.Err.Error()
+	}
+	return msg
+}
+
+func (err *ErrSpoolFailed) Unwrap() error {
+	return err.Err
 }
 
 // ErrMigrationAlreadyRunning includes the migrator holding the account-wide claim.
@@ -133,6 +161,24 @@ func (err *ErrImportItemLimitExceeded) HTTPError() web.HTTPError {
 		HTTPCode: http.StatusBadRequest,
 		Code:     ErrCodeImportItemLimitExceeded,
 		Message:  "The import contains more items than the configured maximum.",
+	}
+}
+
+type ErrImportTooManyViews struct {
+	MaxViews int64
+}
+
+func (err *ErrImportTooManyViews) Error() string {
+	return fmt.Sprintf("A project in the import has more than %d views", err.MaxViews)
+}
+
+const ErrCodeImportTooManyViews = 14020
+
+func (err *ErrImportTooManyViews) HTTPError() web.HTTPError {
+	return web.HTTPError{
+		HTTPCode: http.StatusBadRequest,
+		Code:     ErrCodeImportTooManyViews,
+		Message:  fmt.Sprintf("A project in the import has more than %d views.", err.MaxViews),
 	}
 }
 
@@ -253,6 +299,48 @@ func (err *ErrInvalidCSVImportConfig) HTTPError() web.HTTPError {
 		HTTPCode: http.StatusBadRequest,
 		Code:     ErrCodeInvalidCSVImportConfig,
 		Message:  "The import configuration could not be parsed. Please make sure it is a valid JSON object.",
+	}
+}
+
+type ErrCSVDuplicateColumnMapping struct {
+	Column int
+}
+
+func (err *ErrCSVDuplicateColumnMapping) Error() string {
+	return fmt.Sprintf("CSV column %d is mapped more than once", err.Column)
+}
+
+const ErrCodeCSVDuplicateColumnMapping = 14041
+
+func (err *ErrCSVDuplicateColumnMapping) HTTPError() web.HTTPError {
+	return web.HTTPError{
+		HTTPCode:   http.StatusBadRequest,
+		Code:       ErrCodeCSVDuplicateColumnMapping,
+		Message:    fmt.Sprintf("Column %d is mapped more than once. Map each column to one attribute only.", err.Column),
+		I18nParams: map[string]string{"column": strconv.Itoa(err.Column)},
+	}
+}
+
+type ErrCSVTooManyLabels struct {
+	Row       int
+	MaxLabels int
+}
+
+func (err *ErrCSVTooManyLabels) Error() string {
+	return fmt.Sprintf("CSV row %d has more than %d labels", err.Row, err.MaxLabels)
+}
+
+const ErrCodeCSVTooManyLabels = 14042
+
+func (err *ErrCSVTooManyLabels) HTTPError() web.HTTPError {
+	return web.HTTPError{
+		HTTPCode: http.StatusBadRequest,
+		Code:     ErrCodeCSVTooManyLabels,
+		Message:  fmt.Sprintf("Row %d of the CSV file has more than %d labels.", err.Row, err.MaxLabels),
+		I18nParams: map[string]string{
+			"row": strconv.Itoa(err.Row),
+			"max": strconv.Itoa(err.MaxLabels),
+		},
 	}
 }
 

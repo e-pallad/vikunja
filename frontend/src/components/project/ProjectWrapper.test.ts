@@ -36,6 +36,7 @@ function mountWrapper(projectId: number) {
 			stubs: {
 				RouterLink: true,
 				teleport: false,
+				SwitchView: false,
 			},
 		},
 	})

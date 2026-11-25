@@ -25,16 +25,15 @@ vi.mock('@/message', () => ({error: vi.fn(), success: vi.fn()}))
 vi.mock('@/components/project/partials/BoardIntegrationsPanel.vue', () => ({
 	default: {render: () => null},
 }))
+const project = vi.hoisted(() => ({
+	id: 1,
+	title: 'Test',
+	max_permission: 2,
+	views: [{id: 10, view_kind: 'kanban', bucket_configuration_mode: 'manual'}],
+}))
 vi.mock('@/composables/useCurrentProject', () => ({
 	useCurrentProject: () => ({
-		currentProject: {
-			value: {
-				id: 1,
-				title: 'Test',
-				max_permission: 2,
-				views: [{id: 10, view_kind: 'kanban', bucket_configuration_mode: 'manual'}],
-			},
-		},
+		currentProject: {value: project},
 		isPending: {value: false},
 	}),
 }))
@@ -89,16 +88,20 @@ vi.mock('vue-i18n', async importOriginal => ({
 }))
 
 import ProjectKanban from './ProjectKanban.vue'
+import {projectKeys} from '@/client/queries/projects'
 
 let queryClient: QueryClient
 
 async function mountKanban(stubs: Record<string, unknown> = {}, projectId = 1) {
 	queryClient = new QueryClient()
+	// ProjectView only mounts a board once the project with its views is cached.
+	queryClient.setQueryData(projectKeys.detail(project.id), project)
 	const wrapper = shallowMount(ProjectKanban, {
 		props: {
 			isLoadingProject: false,
 			projectId,
 			viewId: 10,
+			view: {id: 10, view_kind: 'kanban', bucket_configuration_mode: 'manual'},
 		},
 		global: {
 			plugins: [createPinia(), [VueQueryPlugin, {queryClient}]],

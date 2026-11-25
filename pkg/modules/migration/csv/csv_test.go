@@ -18,7 +18,10 @@ package csv
 
 import (
 	"bytes"
+	"io"
 	"testing"
+
+	"code.vikunja.io/api/pkg/models"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -344,16 +347,34 @@ func TestParseLabels(t *testing.T) {
 		{"work, personal, urgent", []string{"work", "personal", "urgent"}},
 		{"single", []string{"single"}},
 		{"  spaced  ,  labels  ", []string{"spaced", "labels"}},
-		{"", []string{}},
-		{",,,", []string{}},
+		{"", nil},
+		{",,,", nil},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.input, func(t *testing.T) {
-			result := parseLabels(tc.input)
-			assert.Equal(t, tc.expected, result)
+			labels := &labelSet{}
+			labels.add(tc.input)
+			assert.Equal(t, tc.expected, labels.titles)
 		})
 	}
+}
+
+func projectsFromCSV(file io.ReaderAt, size int64, config *ImportConfig) ([]*models.ProjectWithTasksAndBuckets, error) {
+	rc, err := newRowConverter(config)
+	if err != nil {
+		return nil, err
+	}
+	return rc.projects(file, size)
+}
+
+func convertRow(t *testing.T, row []string, config *ImportConfig) models.Task {
+	t.Helper()
+	rc, err := newRowConverter(config)
+	require.NoError(t, err)
+	task, err := rc.task(row, 0)
+	require.NoError(t, err)
+	return task
 }
 
 func TestDetectCSVStructure(t *testing.T) {
@@ -444,7 +465,10 @@ func TestConvertToVikunja(t *testing.T) {
 		},
 	}
 
-	result := convertToVikunja(rows, &config)
+	rc, err := newRowConverter(&config)
+	require.NoError(t, err)
+	result, err := rc.convert(rows)
+	require.NoError(t, err)
 
 	// Should have parent project + child projects
 	require.GreaterOrEqual(t, len(result), 2)
@@ -487,6 +511,49 @@ func TestConvertToVikunja(t *testing.T) {
 	assert.Equal(t, 1, tasksProject.numTasks, "Tasks project should have 1 task")
 }
 
+func TestConvertToVikunjaSingleMappedProject(t *testing.T) {
+	config := ImportConfig{
+		Mapping: []ColumnMapping{
+			{ColumnIndex: 0, Attribute: AttrTitle},
+			{ColumnIndex: 1, Attribute: AttrProject},
+		},
+	}
+	rc, err := newRowConverter(&config)
+	require.NoError(t, err)
+
+	t.Run("keeps the mapped project name", func(t *testing.T) {
+		result, err := rc.convert([][]string{
+			{"Task 1", "Groceries"},
+			{"Task 2", "Groceries"},
+		})
+		require.NoError(t, err)
+		require.Len(t, result, 1)
+		assert.Equal(t, "Groceries", result[0].Title)
+		assert.Len(t, result[0].Tasks, 2)
+	})
+
+	t.Run("falls back when every project cell is empty", func(t *testing.T) {
+		result, err := rc.convert([][]string{
+			{"Task 1", ""},
+			{"Task 2", " "},
+		})
+		require.NoError(t, err)
+		require.Len(t, result, 1)
+		assert.Equal(t, "Imported from CSV", result[0].Title)
+		assert.Len(t, result[0].Tasks, 2)
+	})
+
+	t.Run("mixed named and empty cells create sub-projects", func(t *testing.T) {
+		result, err := rc.convert([][]string{
+			{"Task 1", "Groceries"},
+			{"Task 2", ""},
+		})
+		require.NoError(t, err)
+		require.Len(t, result, 3)
+		assert.Equal(t, "Imported from CSV", result[0].Title)
+	})
+}
+
 func TestRowToTask(t *testing.T) {
 	row := []string{"My Task", "Task description", "2024-01-15", "high", "work, urgent"}
 
@@ -501,7 +568,7 @@ func TestRowToTask(t *testing.T) {
 		},
 	}
 
-	task := rowToTask(row, &config, 1)
+	task := convertRow(t, row, &config)
 
 	assert.Equal(t, "My Task", task.Title)
 	assert.Equal(t, "Task description", task.Description)
@@ -538,7 +605,7 @@ func TestRowToTaskWithMissingColumns(t *testing.T) {
 		},
 	}
 
-	task := rowToTask(row, &config, 1)
+	task := convertRow(t, row, &config)
 
 	// Should still work with available columns
 	assert.Equal(t, "My Task", task.Title)
@@ -556,7 +623,7 @@ func TestRowToTaskWithEmptyTitle(t *testing.T) {
 		},
 	}
 
-	task := rowToTask(row, &config, 1)
+	task := convertRow(t, row, &config)
 
 	// Should have default title
 	assert.Equal(t, "Untitled Task", task.Title)
@@ -573,7 +640,7 @@ func TestDoneTask(t *testing.T) {
 		},
 	}
 
-	task := rowToTask(row, &config, 1)
+	task := convertRow(t, row, &config)
 
 	assert.Equal(t, "Done Task", task.Title)
 	assert.True(t, task.Done)

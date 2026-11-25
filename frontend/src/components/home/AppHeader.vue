@@ -105,7 +105,7 @@
 			<XButton
 				class="header-action"
 				icon="plus"
-				@click="baseStore.setQuickActionsActive(true, true)"
+				@click="openNewTask"
 			>
 				{{ $t('quickActions.cmds.newTask') }}
 			</XButton>
@@ -146,16 +146,11 @@
 					{{ $t('admin.title') }}
 				</DropdownItem>
 				<DropdownItem
-					v-if="imprintUrl"
-					:href="imprintUrl"
+					v-for="(link, index) in legalLinks"
+					:key="index"
+					:href="link.url"
 				>
-					{{ $t('navigation.imprint') }}
-				</DropdownItem>
-				<DropdownItem
-					v-if="privacyPolicyUrl"
-					:href="privacyPolicyUrl"
-				>
-					{{ $t('navigation.privacy') }}
+					{{ link.text }}
 				</DropdownItem>
 				<DropdownItem @click="baseStore.setKeyboardShortcutsActive(true)">
 					{{ $t('keyboardShortcuts.title') }}
@@ -199,6 +194,7 @@ import { useAuthStore } from '@/stores/auth'
 import {useCurrentProject} from '@/composables/useCurrentProject'
 import {useProjects} from '@/composables/useProjects'
 import {useSidebarResize} from '@/composables/useSidebarResize'
+import {useLegalLinks} from '@/composables/useLegalLinks'
 
 const baseStore = useBaseStore()
 const {currentProject} = useCurrentProject()
@@ -210,6 +206,15 @@ const canWriteCurrentProject = computed(() =>
 )
 const menuActive = computed(() => baseStore.menuActive)
 const {sidebarWidthStyle} = useSidebarResize()
+
+// An empty prefill opens quick actions straight in "new task" mode
+function openNewTask() {
+	baseStore.setQuickActionsActive(true, {
+		title: '',
+		url: '',
+		description: '',
+	})
+}
 
 const {getAncestors} = useProjects()
 // Ancestors without the project itself, so the header reads "Projects / Parent"
@@ -228,8 +233,7 @@ const pageTitle = computed(() => {
 const authStore = useAuthStore()
 
 const configStore = useConfigStore()
-const imprintUrl = computed(() => configStore.legal.imprint_url)
-const privacyPolicyUrl = computed(() => configStore.legal.privacy_policy_url)
+const legalLinks = useLegalLinks()
 const adminPanelEnabled = computed(() => configStore.isProFeatureEnabled(PRO_FEATURE.ADMIN_PANEL))
 </script>
 

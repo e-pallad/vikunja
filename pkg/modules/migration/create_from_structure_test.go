@@ -496,6 +496,27 @@ func TestInsertFromStructure(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, int64(1), parentBucketCount)
 	})
+	t.Run("skips null positions and task buckets", func(t *testing.T) {
+		db.LoadAndAssertFixtures(t)
+
+		structure := []*models.ProjectWithTasksAndBuckets{{
+			Project: models.Project{
+				Title: "Null positions",
+				Views: []*models.ProjectView{{
+					ID:                      100,
+					Title:                   "Kanban",
+					ViewKind:                models.ProjectViewKindKanban,
+					BucketConfigurationMode: models.BucketConfigurationModeManual,
+				}},
+			},
+			Tasks:       []*models.TaskWithComments{{Task: models.Task{ID: 10, Title: "task"}}},
+			Buckets:     []*models.Bucket{{ID: 200, Title: "Backlog", ProjectViewID: 100}},
+			Positions:   []*models.TaskPosition{nil},
+			TaskBuckets: []*models.TaskBucket{nil},
+		}}
+
+		require.NoError(t, InsertFromStructure(structure, u))
+	})
 	t.Run("preserves out-of-order indexes before assigning automatic indexes", func(t *testing.T) {
 		db.LoadAndAssertFixtures(t)
 
@@ -767,6 +788,118 @@ func TestInsertFromStructureFileProvider(t *testing.T) {
 	})
 }
 
+type contentAttachmentProvider struct {
+	testFileProvider
+}
+
+func (p *contentAttachmentProvider) OpenAttachment(_ *models.TaskAttachment) (io.ReadSeekCloser, int64, error) {
+	return &trackedReadSeekCloser{Reader: bytes.NewReader([]byte{1, 2, 3, 4})}, 4, nil
+}
+
+func TestInsertFromStructureCoverImage(t *testing.T) {
+	u := &user.User{ID: 1}
+	attachment := func(id int64) []*models.TaskAttachment {
+		return []*models.TaskAttachment{
+			{
+				ID: id,
+				File: &files.File{
+					Name:        "file.png",
+					Size:        4,
+					FileContent: []byte{1, 2, 3, 4},
+				},
+			},
+		}
+	}
+
+	for name, insert := range map[string]func([]*models.ProjectWithTasksAndBuckets) error{
+		"in-memory": func(str []*models.ProjectWithTasksAndBuckets) error {
+			return InsertFromStructure(str, u)
+		},
+		"file provider": func(str []*models.ProjectWithTasksAndBuckets) error {
+			return InsertFromStructureWithFileProvider(str, u, &contentAttachmentProvider{})
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			db.LoadAndAssertFixtures(t)
+			noCover := &models.TaskWithComments{
+				Task: models.Task{
+					Title:       "without cover",
+					Attachments: attachment(0),
+				},
+			}
+			withCover := &models.TaskWithComments{
+				Task: models.Task{
+					Title:                  "with cover",
+					Attachments:            attachment(42),
+					CoverImageAttachmentID: 42,
+				},
+			}
+			structure := []*models.ProjectWithTasksAndBuckets{
+				{
+					Project: models.Project{Title: "cover import"},
+					Tasks: []*models.TaskWithComments{
+						noCover,
+						withCover,
+					},
+				},
+			}
+
+			require.NoError(t, insert(structure))
+
+			db.AssertExists(t, "task_attachments", map[string]interface{}{
+				"task_id": noCover.ID,
+			}, false)
+			db.AssertExists(t, "tasks", map[string]interface{}{
+				"id":                        noCover.ID,
+				"cover_image_attachment_id": 0,
+			}, false)
+			db.AssertExists(t, "task_attachments", map[string]interface{}{
+				"id":      withCover.Attachments[0].ID,
+				"task_id": withCover.ID,
+			}, false)
+			db.AssertExists(t, "tasks", map[string]interface{}{
+				"id":                        withCover.ID,
+				"cover_image_attachment_id": withCover.Attachments[0].ID,
+			}, false)
+		})
+	}
+}
+
+type panickingAttachmentProvider struct {
+	testFileProvider
+}
+
+func (p *panickingAttachmentProvider) OpenAttachment(_ *models.TaskAttachment) (io.ReadSeekCloser, int64, error) {
+	panic("attachment")
+}
+
+func TestInsertFromStructurePanicCleanup(t *testing.T) {
+	db.LoadAndAssertFixtures(t)
+	u := &user.User{ID: 1}
+
+	unrelated, err := files.Create(bytes.NewReader([]byte("unrelated")), "unrelated", 9, u)
+	require.NoError(t, err)
+	newBackgroundID := unrelated.ID + 1
+	background := &trackedReadSeekCloser{Reader: bytes.NewReader(testBackground(t))}
+	provider := &panickingAttachmentProvider{testFileProvider{background: background}}
+	structure := []*models.ProjectWithTasksAndBuckets{{
+		Project: models.Project{Title: "panic cleanup", BackgroundFileID: unrelated.ID},
+		Tasks: []*models.TaskWithComments{{Task: models.Task{
+			Title:       "task",
+			Attachments: []*models.TaskAttachment{{File: &files.File{Name: "boom"}}},
+		}}},
+	}}
+
+	require.Panics(t, func() {
+		_ = InsertFromStructureWithFileProvider(structure, u, provider)
+	})
+	require.Equal(t, newBackgroundID, structure[0].Project.BackgroundFileID, "background must be stored before the panic")
+
+	_, err = files.FileStat(&files.File{ID: newBackgroundID})
+	require.ErrorIs(t, err, fs.ErrNotExist, "a panicking import must remove its stored blobs")
+	db.AssertMissing(t, "projects", map[string]interface{}{"title": "panic cleanup"})
+}
+
 func TestInsertFromStructureItemLimit(t *testing.T) {
 	db.LoadAndAssertFixtures(t)
 	config.MigrationMaxItems.Set(3)
@@ -787,4 +920,24 @@ func TestInsertFromStructureItemLimit(t *testing.T) {
 	var limitErr *ErrImportItemLimitExceeded
 	require.ErrorAs(t, err, &limitErr)
 	db.AssertMissing(t, "projects", map[string]interface{}{"title": "item limit project"})
+}
+
+func TestInsertFromStructureRejectsViewTaskFanOut(t *testing.T) {
+	db.LoadAndAssertFixtures(t)
+	config.MigrationMaxItems.Set(100)
+	t.Cleanup(func() { config.MigrationMaxItems.Set(100000) })
+
+	p := &models.ProjectWithTasksAndBuckets{Project: models.Project{Title: "view fan-out project"}}
+	for i := range 20 {
+		p.Tasks = append(p.Tasks, &models.TaskWithComments{Task: models.Task{Title: fmt.Sprintf("task %d", i)}})
+	}
+	for i := range 20 {
+		p.Views = append(p.Views, &models.ProjectView{ID: int64(i + 1), Title: "view", ViewKind: models.ProjectViewKindList})
+	}
+
+	// 41 items without positions, 400 position rows on top.
+	err := InsertFromStructure([]*models.ProjectWithTasksAndBuckets{p}, &user.User{ID: 1})
+	var limitErr *ErrImportItemLimitExceeded
+	require.ErrorAs(t, err, &limitErr)
+	db.AssertMissing(t, "projects", map[string]interface{}{"title": "view fan-out project"})
 }

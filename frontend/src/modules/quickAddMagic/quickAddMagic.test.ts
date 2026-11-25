@@ -3,7 +3,7 @@ import {queryClient} from '@/client/queryClient'
 import {accountKeys} from '@/client/queries/account'
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest'
 
-import {parseTaskText, PrefixMode} from '.'
+import {cleanupItemText, parseTaskText, PrefixMode} from '.'
 import type {ParsedTaskText} from '.'
 import {parseDate} from './dateParser'
 import {calculateDayInterval} from '@/helpers/time/calculateDayInterval'
@@ -193,6 +193,20 @@ describe('Parse Task Text', () => {
 
 			expect(result.text).toBe('Lorem Ipsum')
 			expect(result.date).toBeNull()
+		})
+		it('should not match a date word inside a longer word', () => {
+			for (const text of ['Plan trip next weekend', 'Read todays news', 'Review tomorrows agenda', 'Budget for next months', 'Fix tonights build']) {
+				const result = parseTaskText(text)
+
+				expect(result.text).toBe(text)
+				expect(result.date).toBeNull()
+			}
+		})
+		it('should still match a date word followed by punctuation', () => {
+			const result = parseTaskText('Call mom today, then gym')
+
+			const now = new Date()
+			expect(result?.date?.getDate()).toBe(now.getDate())
 		})
 		it('should ignore casing', () => {
 			const result = parseTaskText('Lorem Ipsum ToDay')
@@ -811,6 +825,16 @@ describe('Parse Task Text', () => {
 				'in 4 weeks': '2021-7-22 12:0',
 				'in 1 month': '2021-7-24 12:0',
 				'in 3 months': '2021-9-24 12:0',
+				'in 30 minutes': '2021-6-24 12:30',
+				'in 1 year': '2022-6-24 12:0',
+				'in two weeks': '2021-7-8 12:0',
+				'in Two Weeks': '2021-7-8 12:0',
+				'in three days': '2021-6-27 12:0',
+				'in twelve months': '2022-6-24 12:0',
+				'in a week': '2021-7-1 12:0',
+				'in an hour': '2021-6-24 13:0',
+				'in a year': '2022-6-24 12:0',
+				'Something in two days at 10:00': '2021-6-26 10:0',
 				'Something in 5 days at 10:00': '2021-6-29 10:0',
 				'Something 17th at 10:00': '2021-7-17 10:0',
 				'Something sep 17 at 10:00': '2021-9-17 10:0',
@@ -854,6 +878,19 @@ describe('Parse Task Text', () => {
 				assert.isNotNull(date)
 				expect(`${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()} ${date.getHours()}:${date.getMinutes()}`).toBe('2021-3-8 12:0')
 				expect(newText).toBe('Some task')
+			})
+
+			it('should remove a spelled out relative date from the text', () => {
+				const {date, newText} = parseDate('Call mom in two weeks', now)
+
+				assert.isNotNull(date)
+				expect(`${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`).toBe('2021-7-8')
+				expect(newText).toBe('Call mom')
+			})
+
+			it('should not parse a relative date from inside a word', () => {
+				expect(parseDate('Meet in a weekend', now).date).toBeNull()
+				expect(parseDate('Check plugin 2 days', now).date).toBeNull()
 			})
 		})
 	})
@@ -917,6 +954,24 @@ describe('Parse Task Text', () => {
 			expect(result.text).toBe('a')
 			expect(result.labels).toHaveLength(1)
 			expect(result.labels[0]).toBe('a (a)')
+		})
+		it('should not cut a label that starts with another label out of the text', () => {
+			const result = parseTaskText('Plan *work *workshop')
+
+			expect(result.text).toBe('Plan')
+			expect(result.labels).toEqual(['work', 'workshop'])
+		})
+		it('should not cut a label that starts with another label at the end of the text', () => {
+			const result = parseTaskText('Plan *work tasks *workshop')
+
+			expect(result.text).toBe('Plan tasks')
+			expect(result.labels).toEqual(['work', 'workshop'])
+		})
+	})
+
+	describe('cleanupItemText', () => {
+		it('should not cut an assignee that starts with another assignee out of the text', () => {
+			expect(cleanupItemText('Ask @john @johnny', ['john', 'johnny'], '@').trim()).toBe('Ask')
 		})
 	})
 
@@ -1098,6 +1153,25 @@ describe('Parse Task Text', () => {
 			})
 		}
 
+		const capitalizedCases = {
+			'Weekly': {type: 'weeks', amount: 1},
+			'Daily': {type: 'days', amount: 1},
+			'Every Day': {type: 'days', amount: 1},
+			'every Month': {type: 'months', amount: 1},
+			'Every Two Weeks': {type: 'weeks', amount: 2},
+			'EVERY 3 YEARS': {type: 'years', amount: 3},
+		} as Record<string, IRepeatAfter>
+
+		for (const c of Object.keys(capitalizedCases)) {
+			it(`should parse ${c} regardless of case as every ${capitalizedCases[c].amount} ${capitalizedCases[c].type}`, () => {
+				const result = parseTaskText(`Lorem Ipsum ${c}`)
+
+				expect(result.text).toBe('Lorem Ipsum')
+				expect(result?.repeats?.type).toBe(capitalizedCases[c].type)
+				expect(result?.repeats?.amount).toBe(capitalizedCases[c].amount)
+			})
+		}
+
 		const wordCases = [
 			'annually',
 			'biannually',
@@ -1117,6 +1191,22 @@ describe('Parse Task Text', () => {
 				expect(result.text).toBe(`Lorem Ipsum word${c}notword`)
 				expect(result?.repeats).toBeNull()
 			})
+		})
+
+		it('should remove the matched recurring period, not an earlier word starting with it', () => {
+			const result = parseTaskText('Update weekly-report weekly')
+
+			expect(result.text).toBe('Update weekly-report')
+			expect(result?.repeats?.type).toBe('weeks')
+			expect(result?.repeats?.amount).toBe(1)
+		})
+
+		it('should remove the matched "every" period, not an earlier one inside a word', () => {
+			const result = parseTaskText('Check every day-planner every day')
+
+			expect(result.text).toBe('Check every day-planner')
+			expect(result?.repeats?.type).toBe('days')
+			expect(result?.repeats?.amount).toBe(1)
 		})
 	})
 })

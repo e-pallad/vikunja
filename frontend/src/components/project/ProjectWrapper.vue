@@ -28,8 +28,9 @@
 					class="switch-view-dropdown"
 				>
 					<template #trigger="{ toggleOpen, open }">
-						<BaseButton
-							class="switch-view switch-view-dropdown-trigger"
+						<SwitchView
+							:is="BaseButton"
+							class="switch-view-dropdown-trigger"
 							:aria-expanded="open"
 							@click="toggleOpen"
 						>
@@ -38,7 +39,7 @@
 								icon="chevron-down"
 								class="dropdown-icon"
 							/>
-						</BaseButton>
+						</SwitchView>
 					</template>
 					<template #default="{ close }">
 						<div @click="close">
@@ -55,10 +56,9 @@
 				</Dropdown>
 
 				<!-- Inline buttons, hidden when overflowing but kept in DOM for width measurement -->
-				<div
+				<SwitchView
 					v-if="views.length > 1"
 					ref="switchViewRef"
-					class="switch-view"
 					:class="{'switch-view--hidden': isOverflowing || !overflowChecked}"
 					:aria-hidden="isOverflowing || undefined"
 				>
@@ -72,7 +72,7 @@
 					>
 						{{ getViewTitle(view) }}
 					</BaseButton>
-				</div>
+				</SwitchView>
 			</Teleport>
 			<Teleport
 				to="#header-view-actions"
@@ -97,7 +97,7 @@
 
 <script setup lang="ts">
 import {computed, ref, watch, nextTick, onMounted, onActivated, onDeactivated} from 'vue'
-import {useResizeObserver} from '@vueuse/core'
+import {unrefElement, useResizeObserver} from '@vueuse/core'
 import {useI18n} from 'vue-i18n'
 
 import BaseButton from '@/components/base/BaseButton.vue'
@@ -106,6 +106,7 @@ import DropdownItem from '@/components/misc/DropdownItem.vue'
 import Icon from '@/components/misc/Icon'
 import Message from '@/components/misc/Message.vue'
 import CustomTransition from '@/components/misc/CustomTransition.vue'
+import SwitchView from '@/components/misc/SwitchView.vue'
 
 import {getProjectTitle} from '@/helpers/getProjectTitle'
 import {useTitle} from '@/composables/useTitle'
@@ -129,12 +130,13 @@ const viewFiltersStore = useViewFiltersStore()
 const {currentProject: queriedProject} = useCurrentProject()
 
 const switchViewContainerRef = ref<HTMLElement>()
-const switchViewRef = ref<HTMLElement>()
+const switchViewRef = ref<InstanceType<typeof SwitchView>>()
 const isOverflowing = ref(false)
 const overflowChecked = ref(false)
 
 function checkOverflow() {
-	if (!switchViewRef.value || !switchViewContainerRef.value) {
+	const switchView = unrefElement(switchViewRef)
+	if (!switchView || !switchViewContainerRef.value) {
 		return
 	}
 	if (tabsInHeader.value) {
@@ -142,7 +144,7 @@ function checkOverflow() {
 		overflowChecked.value = true
 		return
 	}
-	const buttonsWidth = switchViewRef.value.scrollWidth
+	const buttonsWidth = switchView.scrollWidth
 	const containerWidth = switchViewContainerRef.value.clientWidth
 	isOverflowing.value = buttonsWidth > containerWidth
 	overflowChecked.value = true
@@ -236,15 +238,6 @@ function getViewRoute(view: ProjectView) {
 	display: none;
 }
 
-.switch-view {
-	background: var(--kanban-column-background);
-	display: inline-flex;
-	gap: 2px;
-	border-radius: 10px;
-	font-size: .8125rem;
-	padding: 3px;
-}
-
 .switch-view--hidden {
 	position: absolute;
 	visibility: hidden;
@@ -267,28 +260,6 @@ function getViewRoute(view: ProjectView) {
 
 .dropdown-icon {
 	font-size: .6rem;
-}
-
-.switch-view-button {
-	padding: .375rem .75rem;
-	display: block;
-	white-space: nowrap;
-	border-radius: 8px;
-	font-weight: 550;
-	color: var(--grey-600);
-	transition: all 100ms;
-
-	&:hover {
-		color: var(--text-strong);
-		background: var(--kanban-column-count-background);
-	}
-
-	&.is-active {
-		color: var(--text-strong);
-		background: var(--white);
-		font-weight: 600;
-		box-shadow: var(--shadow-xs);
-	}
 }
 
 // FIXME: this should be in notification and set via a prop

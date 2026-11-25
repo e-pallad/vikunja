@@ -52,6 +52,9 @@ const (
 </script>`
 )
 
+// Build artifacts carry no secrets, unlike SPA routes and query strings.
+const staticAssetLogPathKey = `static_asset_log_path`
+
 // Because the files are embedded into the final binary, we can be absolutely sure the etag will never change
 // and we can cache its generation pretty heavily.
 var etagCache map[string]string
@@ -180,6 +183,7 @@ func static() echo.MiddlewareFunc {
 				return err
 			}
 
+			c.Set(staticAssetLogPathKey, "/"+strings.TrimPrefix(name, rootPath))
 			return serveFile(c, file, info, etag)
 		}
 	}
@@ -203,20 +207,20 @@ func generateEtag(file http.File, name string) (etag string, err error) {
 }
 
 // copied from http.serveContent
-func getMimeType(name string, file io.ReadSeeker) (mineType string, err error) {
-	mineType = mime.TypeByExtension(filepath.Ext(name))
-	if mineType == "" {
+func getMimeType(name string, file io.ReadSeeker) (mimeType string, err error) {
+	mimeType = mime.TypeByExtension(filepath.Ext(name))
+	if mimeType == "" {
 		// read a chunk to decide between utf-8 text and binary
 		var buf [512]byte
 		n, _ := io.ReadFull(file, buf[:])
-		mineType = http.DetectContentType(buf[:n])
+		mimeType = http.DetectContentType(buf[:n])
 		_, err := file.Seek(0, io.SeekStart) // rewind to output whole file
 		if err != nil {
 			return "", fmt.Errorf("seeker can't seek")
 		}
 	}
 
-	return mineType, nil
+	return mimeType, nil
 }
 
 func getCacheControlHeader(info os.FileInfo, file io.ReadSeeker) (header string, err error) {

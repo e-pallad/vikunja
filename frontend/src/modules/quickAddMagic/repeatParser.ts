@@ -1,8 +1,9 @@
 import {REPEAT_TYPES, type IRepeatType} from '@/types/IRepeatAfter'
 import type {repeatParsedResult} from './types'
+import {numberWordsRegexGroup, parseAmount} from './numberWords'
 
 export const getRepeats = (text: string): repeatParsedResult => {
-	const regex = /(^| )(((every|each) (([0-9]+|one|two|three|four|five|six|seven|eight|nine|ten) )?(hours?|days?|weeks?|months?|years?))|(annually|biannually|semiannually|biennially|daily|hourly|monthly|weekly|yearly))($| )/ig
+	const regex = new RegExp(`(^| )(((every|each) (([0-9]+|${numberWordsRegexGroup}) )?(hours?|days?|weeks?|months?|years?))|(annually|biannually|semiannually|biennially|daily|hourly|monthly|weekly|yearly))($| )`, 'ig')
 	const results = regex.exec(text)
 	if (results === null) {
 		return {
@@ -11,44 +12,12 @@ export const getRepeats = (text: string): repeatParsedResult => {
 		}
 	}
 
-	let amount: number
-	switch (results[5] ? results[5].trim() : undefined) {
-		case 'one':
-			amount = 1
-			break
-		case 'two':
-			amount = 2
-			break
-		case 'three':
-			amount = 3
-			break
-		case 'four':
-			amount = 4
-			break
-		case 'five':
-			amount = 5
-			break
-		case 'six':
-			amount = 6
-			break
-		case 'seven':
-			amount = 7
-			break
-		case 'eight':
-			amount = 8
-			break
-		case 'nine':
-			amount = 9
-			break
-		case 'ten':
-			amount = 10
-			break
-		default:
-			amount = results[5] ? parseInt(results[5]) : 1
-	}
+	let amount = results[5] ? parseAmount(results[5].trim()) : 1
 	let type: IRepeatType = REPEAT_TYPES.Hours
 
-	switch (results[2]) {
+	// The regex ignores case, so compare lowercased words: "Weekly" or "every Day"
+	// would otherwise fall through to the default and repeat hourly.
+	switch (results[2].toLowerCase()) {
 		case 'biennially':
 			type = REPEAT_TYPES.Years
 			amount = 2
@@ -75,7 +44,7 @@ export const getRepeats = (text: string): repeatParsedResult => {
 			type = REPEAT_TYPES.Weeks
 			break
 		default:
-			switch (results[7]) {
+			switch (results[7]?.toLowerCase()) {
 				case 'hour':
 				case 'hours':
 					type = REPEAT_TYPES.Hours
@@ -105,7 +74,7 @@ export const getRepeats = (text: string): repeatParsedResult => {
 	}
 
 	return {
-		textWithoutMatched: text.replace(matchedText, ''),
+		textWithoutMatched: text.slice(0, results.index) + text.slice(results.index + matchedText.length),
 		repeats: {
 			amount,
 			type,
