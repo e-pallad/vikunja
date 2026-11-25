@@ -1441,14 +1441,14 @@ h2 .button {
 		background-color: transparent;
 		box-shadow: none;
 
-		// bright brand green with fixed dark text passes contrast in both themes
+		// Deep green with white text: 7:1, calmer than the neon brand green
 		&.is-pending {
-			background-color: var(--success);
-			color: hsl(215, 27.9%, 16.9%);
+			background-color: hsl(146, 55%, 26%);
+			color: #ffffff;
 
 			&:hover,
 			&:focus {
-				filter: brightness(1.05);
+				background-color: hsl(146, 55%, 21%);
 			}
 		}
 	}

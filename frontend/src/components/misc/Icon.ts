@@ -1,11 +1,14 @@
 import {library} from '@fortawesome/fontawesome-svg-core'
 import {
 	faAlignLeft,
+	faAsterisk,
+	faHashtag,
 	faAngleLeft,
 	faAngleRight,
 	faAnglesUp,
 	faArchive,
 	faArrowLeft,
+	faArrowRight,
 	faArrowDownShortWide,
 	faArrowUpFromBracket,
 	faArrowUpRightFromSquare,
@@ -135,6 +138,7 @@ library.add(faAngleLeft)
 library.add(faAngleRight)
 library.add(faArchive)
 library.add(faArrowLeft)
+library.add(faArrowRight)
 library.add(faBars)
 library.add(faBell)
 library.add(faBellSlash)
@@ -188,6 +192,8 @@ library.add(faSearch)
 library.add(faShareAlt)
 library.add(faSignOutAlt)
 library.add(faSitemap)
+library.add(faAsterisk)
+library.add(faHashtag)
 library.add(faSort)
 library.add(faSortUp)
 library.add(faStar)

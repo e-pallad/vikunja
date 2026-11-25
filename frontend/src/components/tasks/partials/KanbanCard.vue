@@ -7,6 +7,7 @@
 			'draggable': !loadingInternal,
 			'has-light-text': !colorIsDark(color),
 			'has-custom-background-color': color ?? undefined,
+			'is-done': task.done,
 		}"
 		:style="{'background-color': color ?? undefined}"
 		:data-task-id="task.id"
@@ -21,8 +22,80 @@
 			alt=""
 			class="tw:w-full"
 		>
-		<div class="p-2">
-			<div class="tw:flex tw:justify-between">
+		<div class="kanban-card__body">
+			<Labels
+				v-if="task.labels?.length > 0"
+				:labels="task.labels"
+				class="kanban-card__labels"
+			/>
+
+			<h3>
+				<RouterLink
+					:to="{ name: 'task.detail', params: {id: task.id} }"
+					class="kanban-card__title-link"
+					draggable="false"
+					@click.exact.prevent.stop="openTaskDetail()"
+					@click.ctrl.stop
+					@click.meta.stop
+				>
+					{{ task.title }}
+				</RouterLink>
+			</h3>
+
+			<span
+				v-if="projectTitle"
+				class="project-title"
+			>
+				{{ projectTitle }}
+			</span>
+
+			<div
+				v-if="subtasks.total > 0"
+				class="kanban-card__subtasks"
+				:class="{'is-all-done': subtasks.done === subtasks.total}"
+				role="img"
+				:aria-label="$t('task.subtaskSummary', subtasks)"
+			>
+				<Icon
+					icon="list-check"
+					class="kanban-card__subtasks-icon"
+				/>
+				<span class="kanban-card__subtasks-track">
+					<span
+						class="kanban-card__subtasks-fill"
+						:style="{'inline-size': `${subtasks.done / subtasks.total * 100}%`}"
+					/>
+				</span>
+				<span class="kanban-card__subtasks-count">{{ subtasks.done }}/{{ subtasks.total }}</span>
+			</div>
+
+			<div
+				v-if="checklist.total > 0"
+				class="kanban-card__subtasks kanban-card__checklist"
+				:class="{'is-all-done': checklist.checked === checklist.total}"
+				role="img"
+				:aria-label="$t('task.checklistTotal', {...checklist})"
+			>
+				<Icon
+					:icon="['far', 'check-square']"
+					class="kanban-card__subtasks-icon"
+				/>
+				<span class="kanban-card__subtasks-track">
+					<span
+						class="kanban-card__subtasks-fill"
+						:style="{'inline-size': `${checklist.checked / checklist.total * 100}%`}"
+					/>
+				</span>
+				<span class="kanban-card__subtasks-count">{{ checklist.checked }}/{{ checklist.total }}</span>
+			</div>
+
+			<ProgressBar
+				v-if="task.percent_done > 0"
+				class="task-progress"
+				:value="task.percent_done * 100"
+			/>
+
+			<div class="footer">
 				<span class="task-id">
 					<Done
 						class="kanban-card__done"
@@ -53,35 +126,6 @@
 						{{ formatDisplayDate(task.due_date) }}
 					</time>
 				</span>
-			</div>
-			
-			<h3>
-				<RouterLink
-					:to="{ name: 'task.detail', params: {id: task.id} }"
-					class="kanban-card__title-link"
-					draggable="false"
-					@click.exact.prevent.stop="openTaskDetail()"
-					@click.ctrl.stop
-					@click.meta.stop
-				>
-					{{ task.title }}
-				</RouterLink>
-			</h3>
-			
-			<span
-				v-if="projectTitle"
-				class="project-title"
-			>
-				{{ projectTitle }}
-			</span>
-
-			<ProgressBar
-				v-if="task.percent_done > 0"
-				class="task-progress"
-				:value="task.percent_done * 100"
-			/>
-			<div class="footer">
-				<Labels :labels="task.labels" />
 				<PriorityLabel
 					:priority="task.priority"
 					:done="task.done"
@@ -114,11 +158,8 @@
 				<AssigneeList
 					v-if="task.assignees.length > 0"
 					:assignees="task.assignees"
-					:avatar-size="24"
-				/>
-				<ChecklistSummary
-					:task="task"
-					class="checklist"
+					:avatar-size="22"
+					class="kanban-card__assignees"
 				/>
 				<span
 					v-if="showUpdated"
@@ -148,7 +189,7 @@ import OverdueIndicator from '@/components/tasks/partials/OverdueIndicator.vue'
 import ProgressBar from '@/components/misc/ProgressBar.vue'
 import Done from '@/components/misc/Done.vue'
 import Labels from '@/components/tasks/partials/Labels.vue'
-import ChecklistSummary from './ChecklistSummary.vue'
+import {getChecklistStatistics} from '@/helpers/checklistFromText'
 import CommentCount from './CommentCount.vue'
 
 import {getHexColor, getTaskIdentifier} from '@/helpers/task'
@@ -198,6 +239,16 @@ const projectTitle = computed(() => {
 	
 	const project = projectList.projects[props.task.project_id]
 	return project?.title
+})
+
+const checklist = computed(() => getChecklistStatistics(props.task.description ?? ''))
+
+const subtasks = computed(() => {
+	const children = props.task.related_tasks?.subtask ?? []
+	return {
+		done: children.filter(child => child.done).length,
+		total: children.length,
+	}
 })
 
 const showTaskPosition = computed(() => window.DEBUG_TASK_POSITION)
@@ -339,19 +390,27 @@ onBeforeUnmount(() => {
 </script>
 
 <style lang="scss" scoped>
-$task-background: var(--white);
+$task-background: var(--kanban-card-background);
 
 .task {
 	-webkit-touch-callout: none; // iOS Safari
 	user-select: none;
 	cursor: pointer;
-	box-shadow: var(--shadow-xs);
 	display: block;
 
-	font-size: .9rem;
-	border-radius: $radius;
+	font-size: .875rem;
+	border: 1px solid var(--card-border-color);
+	border-radius: 10px;
 	background: $task-background;
+	box-shadow: var(--shadow-xs);
 	overflow: hidden;
+	transition: box-shadow $transition, border-color $transition, transform $transition;
+
+	&:hover {
+		border-color: var(--grey-300);
+		box-shadow: var(--shadow-md);
+		transform: translateY(-1px);
+	}
 
 	&.loader-container.is-loading::after {
 		inline-size: 1.5rem;
@@ -363,8 +422,12 @@ $task-background: var(--white);
 
 	h3 {
 		font-family: $family-sans-serif;
-		font-size: .85rem;
+		font-size: .9375rem;
+		font-weight: 600;
+		letter-spacing: -.005em;
+		line-height: 1.35;
 		word-break: break-word;
+		margin: 0;
 	}
 
 	.kanban-card__title-link {
@@ -373,24 +436,21 @@ $task-background: var(--white);
 	}
 
 	.due-date {
-		float: inline-end;
-		display: flex;
+		display: inline-flex;
 		align-items: center;
-		padding: 0 .25rem;
-		font-size: .85rem;
+		font-size: .75rem;
+		font-weight: 500;
 
 		.icon {
 			margin-inline-end: .25rem;
+			block-size: auto;
+			inline-size: auto;
 		}
-
 	}
 
 	&[data-is-overdue] .due-date {
 		color: var(--danger-text);
-	}
-
-	.label-wrapper .tag {
-		margin: .5rem .5rem 0 0;
+		background: hsla(var(--danger-h), var(--danger-s), 60%, .12);
 	}
 
 	.footer {
@@ -399,36 +459,15 @@ $task-background: var(--white);
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		gap: .25rem;
-		margin-block-start: .25rem;
+		gap: .375rem;
+		color: var(--text-muted);
+		font-size: .75rem;
 
 		:deep(.checklist-summary) {
 			padding-inline-start: 0;
-		}
-
-		.assignees {
-			display: flex;
-
-			.user {
-				display: inline;
-				margin: 0;
-
-				img {
-					margin: 0;
-				}
-			}
-		}
-
-		.priority-label {
 			font-size: .75rem;
-			padding: 0 .5rem 0 .25rem;
-
-			.icon {
-				block-size: 1rem;
-				padding: 0 .25rem;
-				margin-block-start: 0;
-			}
 		}
+
 	}
 
 	.updated {
@@ -441,22 +480,25 @@ $task-background: var(--white);
 	}
 
 	.footer .icon,
-	.due-date,
-	.priority-label {
+	.due-date {
 		background: var(--grey-100);
-		border-radius: $radius;
-		padding: 0 .5rem;
+		border-radius: 5px;
+		padding: .0625rem .375rem;
 	}
 
 	.task-id, .project-title {
-		color: var(--grey-500);
-		font-size: .8rem;
-		margin-block-end: .25rem;
-		display: flex;
+		color: var(--text-muted);
+		font-size: .75rem;
+		display: inline-flex;
+		align-items: center;
 	}
 
 	&.is-moving {
 		opacity: .5;
+	}
+
+	&.is-done:not(.has-custom-background-color) h3 {
+		color: var(--text-muted);
 	}
 
 	span {
@@ -465,6 +507,11 @@ $task-background: var(--white);
 
 	&.has-custom-background-color {
 		color: #000000; // pure black, not grey-800: guarantees 4.5:1 at the luminance flip point
+		border-color: transparent;
+
+		.footer {
+			color: inherit;
+		}
 
 		.footer .icon,
 		.due-date,
@@ -473,7 +520,7 @@ $task-background: var(--white);
 		}
 
 		// beat component-level color: var(--grey-500) so secondary text tracks the guaranteed main text color
-		.task-id, .project-title, .updated {
+		.task-id, .project-title, .updated, .kanban-card__subtasks {
 			color: inherit;
 		}
 
@@ -499,7 +546,7 @@ $task-background: var(--white);
 		}
 
 		// beat component-level color: var(--grey-500) so secondary text tracks the guaranteed main text color
-		.task-id, .project-title, .updated {
+		.task-id, .project-title, .updated, .kanban-card__subtasks {
 			color: inherit;
 		}
 
@@ -515,19 +562,71 @@ $task-background: var(--white);
 	}
 }
 
+.kanban-card__body {
+	display: flex;
+	flex-direction: column;
+	gap: .625rem;
+	padding: .75rem .875rem;
+}
+
+.kanban-card__labels :deep(.tag) {
+	font-size: .6875rem;
+	font-weight: 600;
+	block-size: auto;
+	padding: .125rem .4375rem;
+	border-radius: 5px;
+}
+
+.kanban-card__subtasks {
+	display: flex;
+	align-items: center;
+	gap: .5rem;
+	color: var(--text-muted);
+	font-size: .75rem;
+	font-weight: 600;
+
+	&.is-all-done .kanban-card__subtasks-fill {
+		background: var(--success-dark);
+	}
+}
+
+.kanban-card__subtasks-icon {
+	inline-size: .75rem;
+}
+
+.kanban-card__subtasks-track {
+	flex: 1;
+	block-size: 4px;
+	border-radius: 999px;
+	background: var(--grey-200);
+	overflow: hidden;
+}
+
+.kanban-card__subtasks-fill {
+	display: block;
+	block-size: 100%;
+	border-radius: inherit;
+	background: var(--primary);
+	transition: inline-size $transition;
+}
+
+.kanban-card__assignees {
+	margin-inline-start: auto;
+}
+
 .kanban-card__done {
 	margin-inline-end: .25rem;
 }
 
 .task-progress {
-	margin: 8px 0 0;
+	margin: 0;
 	inline-size: 100%;
-	block-size: 0.5rem;
+	block-size: 0.375rem;
 }
 
 :deep(.comment-count) {
 	background: var(--grey-100);
-	border-radius: $radius;
-	padding: 0.25rem;
+	border-radius: 5px;
+	padding: .0625rem .375rem;
 }
 </style>

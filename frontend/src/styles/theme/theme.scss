@@ -51,7 +51,9 @@ h4,
 h5,
 h6 {
   font-family: $vikunja-font;
-  font-weight: 400 !important;
+  // Inter reads too light at 400 for headings; components can still override
+  font-weight: 600;
+  letter-spacing: -.01em;
 }
 
 // FIXME: these helpers should be mixins

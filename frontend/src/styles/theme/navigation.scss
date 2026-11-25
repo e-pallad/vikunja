@@ -22,12 +22,19 @@
     
     &.other-menu-items li,
     li > div {
-      height: 44px;
+      height: 40px;
       display: flex;
       align-items: center;
+      margin-inline: .5rem;
+      border-radius: 8px;
+      transition: background-color $transition;
 
       &:hover {
-        background: var(--white);
+        background: var(--kanban-column-background);
+      }
+
+      &:has(> a.router-link-exact-active) {
+        background: hsla(var(--primary-hsl), .1);
       }
     }
 
@@ -42,7 +49,9 @@
           opacity: 0;
         }
 
-        &:hover .menu-list-dropdown {
+        &:hover .menu-list-dropdown,
+        // Below 1 the opacity makes a stacking context that would trap the open menu under the next rows
+        .menu-list-dropdown:has([aria-expanded="true"]) {
           opacity: 1;
         }
       }
@@ -107,6 +116,7 @@
 
         &.router-link-exact-active {
           color: var(--primary);
+          font-weight: 600;
         }
 
         .icon {

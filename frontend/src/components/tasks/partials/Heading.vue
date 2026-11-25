@@ -198,6 +198,10 @@ async function cancel(element: HTMLInputElement) {
 
 .title {
 	margin-block-end: 0;
+	font-size: 1.75rem;
+	font-weight: 700;
+	letter-spacing: -.02em;
+	color: var(--text-strong);
 }
 
 // Out of flow so it doesn't squeeze the title while visible.
@@ -218,7 +222,8 @@ async function cancel(element: HTMLInputElement) {
 }
 
 .title.task-id {
-	color: var(--grey-400);
+	color: var(--text-muted);
+	font-weight: 500;
 	white-space: nowrap;
 }
 
@@ -235,6 +240,8 @@ async function cancel(element: HTMLInputElement) {
 	position: absolute;
 	inset-inline-end: 1.25rem;
 	inset-block-start: 1.1rem;
+	// The editable title spans the full width and would otherwise take the click
+	z-index: 1;
 
 	@media screen and (max-width: $tablet) {
 		display: block;

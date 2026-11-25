@@ -900,6 +900,7 @@
     "retry": "Retry"
   },
   "navigation": {
+    "searchTasks": "Search tasks",
     "overview": "Overview",
     "upcoming": "Upcoming",
     "settings": "Settings",
@@ -1171,6 +1172,7 @@
     "undo": "Undo",
     "checklistTotal": "{checked} of {total} tasks",
     "checklistAllDone": "{total} tasks",
+    "subtaskSummary": "{done} of {total} subtasks done",
     "show": {
       "titleCurrent": "Current Tasks",
       "noDates": "Show tasks without date",
@@ -1906,6 +1908,34 @@
       "empty": "No invite links yet. Create a link to invite people to this instance.",
       "futureExpiry": "Choose an expiry in the future.",
       "creatorDeleted": "Deleted user"
+    }
+  },
+  "integrations": {
+    "title": "Integrations",
+    "localInstance": "Local instance",
+    "selfHosted": "Self-hosted",
+    "noWebhook": "No webhook found",
+    "noMcpToken": "No MCP token",
+    "unavailable": "Status unavailable",
+    "perProject": "Open a project to check",
+    "webhooks": "{count} webhook | {count} webhooks",
+    "mcpTokens": "{count} active token | {count} active tokens",
+    "connected": "{count} connected",
+    "recent": "Recently updated",
+    "recentEmpty": "No tasks yet",
+    "updated": "Updated {since}",
+    "manage": "Manage integrations",
+    "showPanel": "Show integrations",
+    "hidePanel": "Hide integrations",
+    "purpose": {
+      "n8n": "Workflows via webhooks",
+      "mcp": "Tasks, labels and comments",
+      "slack": "Notifications via webhooks"
+    },
+    "state": {
+      "active": "Configured",
+      "off": "None found",
+      "unknown": "Status unknown"
     }
   },
   "trash": {

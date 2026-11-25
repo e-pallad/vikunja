@@ -372,6 +372,10 @@ onBeforeUnmount(() => {
 
 .tasks {
 	padding: .5rem;
+
+	> * + * {
+		border-block-start: 1px solid var(--surface-border);
+	}
 }
 
 .task-ghost {

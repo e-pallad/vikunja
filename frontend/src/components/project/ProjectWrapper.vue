@@ -13,60 +13,73 @@
 		<div
 			ref="switchViewContainerRef"
 			class="switch-view-container d-print-none"
-			:class="{'is-justify-content-flex-end': views.length === 1}"
+			:class="{
+				'is-justify-content-flex-end': views.length === 1,
+				'is-in-header': tabsInHeader,
+			}"
 		>
-			<!-- Dropdown mode when buttons overflow -->
-			<Dropdown
-				v-if="isOverflowing && views.length > 1"
-				class="switch-view-dropdown"
+			<Teleport
+				to="#header-view-switch"
+				:disabled="!tabsInHeader"
 			>
-				<template #trigger="{ toggleOpen, open }">
-					<SwitchView
-						:is="BaseButton"
-						class="switch-view-dropdown-trigger"
-						:aria-expanded="open"
-						@click="toggleOpen"
-					>
-						{{ activeViewTitle }}
-						<Icon
-							icon="chevron-down"
-							class="dropdown-icon"
-						/>
-					</SwitchView>
-				</template>
-				<template #default="{ close }">
-					<div @click="close">
-						<DropdownItem
-							v-for="view in views"
-							:key="view.id"
-							:to="getViewRoute(view)"
-							:class="{'is-active': view.id === viewId}"
-						>
-							{{ getViewTitle(view) }}
-						</DropdownItem>
-					</div>
-				</template>
-			</Dropdown>
-
-			<!-- Inline buttons, hidden when overflowing but kept in DOM for width measurement -->
-			<SwitchView
-				v-if="views.length > 1"
-				ref="switchViewRef"
-				:class="{'switch-view--hidden': isOverflowing || !overflowChecked}"
-				:aria-hidden="isOverflowing || undefined"
-			>
-				<BaseButton
-					v-for="view in views"
-					:key="view.id"
-					class="switch-view-button"
-					:class="{'is-active': view.id === viewId}"
-					:to="getViewRoute(view)"
-					:tabindex="isOverflowing ? -1 : undefined"
+				<!-- Dropdown mode when buttons overflow -->
+				<Dropdown
+					v-if="isOverflowing && views.length > 1"
+					class="switch-view-dropdown"
 				>
-					{{ getViewTitle(view) }}
-				</BaseButton>
-			</SwitchView>
-			<slot name="header" />
+					<template #trigger="{ toggleOpen, open }">
+						<SwitchView
+							:is="BaseButton"
+							class="switch-view-dropdown-trigger"
+							:aria-expanded="open"
+							@click="toggleOpen"
+						>
+							{{ activeViewTitle }}
+							<Icon
+								icon="chevron-down"
+								class="dropdown-icon"
+							/>
+						</SwitchView>
+					</template>
+					<template #default="{ close }">
+						<div @click="close">
+							<DropdownItem
+								v-for="view in views"
+								:key="view.id"
+								:to="getViewRoute(view)"
+								:class="{'is-active': view.id === viewId}"
+							>
+								{{ getViewTitle(view) }}
+							</DropdownItem>
+						</div>
+					</template>
+				</Dropdown>
+
+				<!-- Inline buttons, hidden when overflowing but kept in DOM for width measurement -->
+				<SwitchView
+					v-if="views.length > 1"
+					ref="switchViewRef"
+					:class="{'switch-view--hidden': isOverflowing || !overflowChecked}"
+					:aria-hidden="isOverflowing || undefined"
+				>
+					<BaseButton
+						v-for="view in views"
+						:key="view.id"
+						class="switch-view-button"
+						:class="{'is-active': view.id === viewId}"
+						:to="getViewRoute(view)"
+						:tabindex="isOverflowing ? -1 : undefined"
+					>
+						{{ getViewTitle(view) }}
+					</BaseButton>
+				</SwitchView>
+			</Teleport>
+			<Teleport
+				to="#header-view-actions"
+				:disabled="!tabsInHeader"
+			>
+				<slot name="header" />
+			</Teleport>
 		</div>
 		<CustomTransition name="fade">
 			<Message
@@ -83,7 +96,7 @@
 </template>
 
 <script setup lang="ts">
-import {computed, ref, watch, nextTick, onMounted} from 'vue'
+import {computed, ref, watch, nextTick, onMounted, onActivated, onDeactivated} from 'vue'
 import {unrefElement, useResizeObserver} from '@vueuse/core'
 import {useI18n} from 'vue-i18n'
 
@@ -100,6 +113,7 @@ import {useTitle} from '@/composables/useTitle'
 
 import {useViewFiltersStore} from '@/stores/viewFilters'
 import {useCurrentProject} from '@/composables/useCurrentProject'
+import {useIsMobile} from '@/composables/useIsMobile'
 
 import type {ProjectView} from '@/client/generated'
 import {normalizeProject} from '@/client/queries/projects'
@@ -122,17 +136,39 @@ const overflowChecked = ref(false)
 
 function checkOverflow() {
 	const switchView = unrefElement(switchViewRef)
-	if (!switchView || !switchViewContainerRef.value) {
+	const container = switchViewContainerRef.value
+	if (!switchView || !container) {
+		return
+	}
+	// In the header the tabs scroll sideways instead of folding into a dropdown
+	if (tabsInHeader.value) {
+		isOverflowing.value = false
+		overflowChecked.value = true
 		return
 	}
 	const buttonsWidth = switchView.scrollWidth
-	const containerWidth = switchViewContainerRef.value.clientWidth
+	const containerWidth = container.clientWidth
 	isOverflowing.value = buttonsWidth > containerWidth
 	overflowChecked.value = true
 }
 
+// The tabs live in the app header on desktop. Link shares have no header, and a
+// kept-alive wrapper that is not on screen must hand the header back.
+const isMobile = useIsMobile()
+const headerTarget = ref<HTMLElement | null>(null)
+const hasHeaderTarget = computed(() => headerTarget.value !== null)
+const isShown = ref(true)
+const tabsInHeader = computed(() => hasHeaderTarget.value && isShown.value && !isMobile.value)
+
 onMounted(() => {
+	headerTarget.value = document.getElementById('header-view-switch')
 	checkOverflow()
+})
+onActivated(() => {
+	isShown.value = true
+})
+onDeactivated(() => {
+	isShown.value = false
 })
 
 useResizeObserver(switchViewContainerRef, () => {
@@ -150,6 +186,10 @@ const activeViewTitle = computed(() => {
 })
 
 // Re-check overflow when views change
+watch(tabsInHeader, () => {
+	nextTick(() => checkOverflow())
+})
+
 watch(views, () => {
 	nextTick(() => checkOverflow())
 })
@@ -197,6 +237,10 @@ function getViewRoute(view: ProjectView) {
 	}
 }
 
+.switch-view-container.is-in-header {
+	display: none;
+}
+
 .switch-view--hidden {
 	position: absolute;
 	visibility: hidden;
@@ -211,10 +255,14 @@ function getViewRoute(view: ProjectView) {
 	cursor: pointer;
 	display: inline-flex;
 	align-items: center;
-	gap: .25rem;
-	font-weight: bold;
-	color: var(--switch-view-color);
-	background: var(--switch-view-active-background);
+	gap: .375rem;
+	padding: .4375rem .75rem;
+	font-weight: 600;
+	color: var(--text-strong);
+	white-space: nowrap;
+	max-inline-size: 100%;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 .dropdown-icon {

@@ -35,6 +35,7 @@ function mountWrapper(projectId: number) {
 			mocks: {$t: (key: string) => key},
 			stubs: {
 				RouterLink: true,
+				teleport: false,
 				SwitchView: false,
 			},
 		},

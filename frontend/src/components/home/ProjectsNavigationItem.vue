@@ -299,6 +299,8 @@ async function toggleProjectFavorite() {
 .project-menu-title {
 	overflow: hidden;
 	text-overflow: ellipsis;
+	font-size: .875rem;
+	font-weight: 500;
 }
 
 .saved-filter-icon {
